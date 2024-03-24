@@ -2,7 +2,6 @@ from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener
 import time
 from threading import Thread
-import os
 
 # define board
 board = Arduino("COM7")
