@@ -20,7 +20,7 @@ pinRFNum = 11
 pinLB = board.get_pin(f"d:{pinLBNum}:o")
 pinLF = board.get_pin(f"d:{pinLFNum}:o")
 pinRB = board.get_pin(f"d:{pinRBNum}:o")
-pinRF = board.get_pin(f"d:pinRFNum}:o")
+pinRF = board.get_pin(f"d:{pinRFNum}:o")
 
 def advance():
     global pinLB
@@ -103,3 +103,4 @@ def on_release(key):
 def get_keys():
     with Listener(on_press=on_press, on_release = on_release) as listener:
         listener.join()
+        
