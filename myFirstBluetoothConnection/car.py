@@ -1,4 +1,3 @@
-
 from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener
 from time import sleep
@@ -11,7 +10,7 @@ it.start()
 
 sleep(1)
 
-# 
+# dictionary to keep track of which buttons are pressed at any time
 currentButtonsPressed = {'w': 0, 's': 0, 'a': 0, 'd': 0}
 
 # define pins
@@ -25,114 +24,72 @@ pinLF = board.get_pin(f"d:{pinLFNum}:o")
 pinRB = board.get_pin(f"d:{pinRBNum}:o")
 pinRF = board.get_pin(f"d:{pinRFNum}:o")
 
-def advance():
+# moves the car according to input for directions
+def move(directionSpeeds):
     global pinLB
     global pinLF
     global pinRB
     global pinRF
     
-    pinRB.write(0)
-    pinRF.write(1)
-    pinLB.write(0)
-    pinLF.write(1)
+    pinRB.write(directionSpeeds[0])
+    pinRF.write(directionSpeeds[1])
+    pinLB.write(directionSpeeds[2])
+    pinLF.write(directionSpeeds[3])
+
+def advance():
+    directionSpeeds = [0, 1, 0, 1]
+    move(directionSpeeds)
     
 def back():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
-    
-    pinRB.write(1)
-    pinRF.write(0)
-    pinLB.write(1)
-    pinLF.write(0)
+    directionSpeeds = [1, 0, 1, 0]
+    move(directionSpeeds)
     
 def stop():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
-
-    pinRB.write(1)
-    pinRF.write(1)
-    pinLB.write(1)
-    pinLF.write(1)
+    directionSpeeds = [1, 1, 1, 1]
+    move(directionSpeeds)
     
 def turnRight():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
-
-    pinRB.write(1)
-    pinRF.write(0)
-    pinLB.write(0)
-    pinLF.write(1)
+    directionSpeeds = [1, 0, 0, 1]
+    move(directionSpeeds)
 
 def turnLeft():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
-
-    pinRB.write(0)
-    pinRF.write(1)
-    pinLB.write(1)
-    pinLF.write(0)
+    directionSpeeds = [0, 1, 1, 0]
+    move(directionSpeeds)
     
 def turnLeftWhileForward():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
-
-    pinRB.write(0)
-    pinRF.write(1)
-    pinLB.write(1)
-    pinLF.write(1)
+    directionSpeeds = [0, 1, 1, 1]
+    move(directionSpeeds)
     
 def turnRightWhileForward():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
-
-    pinRB.write(1)
-    pinRF.write(1)
-    pinLB.write(0)
-    pinLF.write(1)
+    directionSpeeds = [1, 1, 0, 1]
+    move(directionSpeeds)
     
 def turnLeftWhileBackward():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
-
-    pinRB.write(1)
-    pinRF.write(0)
-    pinLB.write(1)
-    pinLF.write(1)
+    directionSpeeds = [1, 0, 1, 1]
+    move(directionSpeeds)
 
 def turnRightWhileBackward():
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
+    directionSpeeds = [1, 1, 1, 0]
+    move(directionSpeeds)
 
-    pinRB.write(1)
-    pinRF.write(1)
-    pinLB.write(1)
-    pinLF.write(0)
+# keeps track of which buttons are pressed
+def setCurrentButtonsPressed(button, action):
+    global currentButtonsPressed
+    
+    if button in currentButtonsPressed.keys():
+        if action == "released":
+            value = 0
+        elif action == "pressed":
+            value = 1
+        currentButtonsPressed[button] = value
 
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
-    global currentButtonsPressed
-
     # if delete is pressed, then exit thread
     if key == Key.delete:
         return False
     
-    # light up yellow LED when "y" is pressed
+    # move car if 'w', 's', 'a' or 'd' is pushed
     try:
         buttonPressed = key.char
         if buttonPressed == "w":
@@ -153,19 +110,19 @@ def on_press(key):
                 turnRightWhileBackward()
             else:
                 turnRight()
-        currentButtonsPressed[buttonPressed] = 1
+                
+        # set which button is currently pressed
+        setCurrentButtonsPressed(buttonPressed, "pressed")
     except:
         stop()
 
 #procedure for what do when releasing buttons
 def on_release(key):
-    global currentButtonsPressed
-    
     stop()
     
     try:
         buttonReleased = key.char
-        currentButtonsPressed[buttonReleased] = 0
+        setCurrentButtonsPressed(buttonReleased, "released")
     except:
         pass
    
