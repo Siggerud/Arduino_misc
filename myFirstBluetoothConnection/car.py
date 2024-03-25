@@ -1,7 +1,6 @@
 from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener
-import time
-from threading import Thread
+from time import sleep
 
 # define board
 board = Arduino("COM7")
@@ -9,7 +8,7 @@ board = Arduino("COM7")
 it = util.Iterator(board)
 it.start()
 
-speed = 0.6
+sleep(1)
 
 # define pins
 pinLBNum = 6
@@ -88,14 +87,15 @@ def on_press(key):
         if key.char == "w":
             advance()
         elif key.char == "s":
-            back(speed)
+            back()
         elif key.char == "a":
             turnLeft()
         elif key.char == "d":
             turnRight()
     except:
         stop()
-        
+
+#procedure for what do when releasing buttons
 def on_release(key):
     stop()
    
@@ -103,4 +103,8 @@ def on_release(key):
 def get_keys():
     with Listener(on_press=on_press, on_release = on_release) as listener:
         listener.join()
-        
+
+print("You can start steering now")
+print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
+get_keys()
+print("Exiting program")
