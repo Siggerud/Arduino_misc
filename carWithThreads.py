@@ -15,7 +15,7 @@ sleep(1)
 stopThreads = False
 
 # dictionary to keep track of which buttons are pressed at any time
-currentButtonsPressed = {'w': 0, 's': 0, 'a': 0, 'd': 0}
+currentButtonsPressed = {'w': 0, 's': 0, 'a': 0, 'd': 0, 'h': 0}
 
 # define pins
 pinLBNum = 11
@@ -26,6 +26,8 @@ pinRFNum = 6
 pinRightLedNum = 2
 pinLeftLedNum = 13
 
+honkPinNum = 8
+
 pinLB = board.get_pin(f"d:{pinLBNum}:o")
 pinLF = board.get_pin(f"d:{pinLFNum}:o")
 pinRB = board.get_pin(f"d:{pinRBNum}:o")
@@ -33,6 +35,8 @@ pinRF = board.get_pin(f"d:{pinRFNum}:o")
 
 pinRightLed = board.get_pin(f"d:{pinRightLedNum}:o")
 pinLeftLed = board.get_pin(f"d:{pinLeftLedNum}:o")
+
+honkPin = board.get_pin(f"d:{honkPinNum}:o")
 
 # moves the car according to input for directions
 def move(directionSpeeds):
@@ -102,6 +106,9 @@ def on_press(key):
     # move car if 'w', 's', 'a' or 'd' is pushed
     try:
         buttonPressed = key.char
+        if buttonPressed == 'h':
+            honkPin.write(1)
+        
         if buttonPressed == "w":
             advance()
         elif buttonPressed == "s":
@@ -133,6 +140,9 @@ def on_release(key):
     try:
         buttonReleased = key.char
         setCurrentButtonsPressed(buttonReleased, "released")
+        
+        if buttonReleased == 'h':
+            honkPin.write(0)
     except:
         pass
    
@@ -144,7 +154,7 @@ def get_keys():
         listener.join()
         stopThreads = True
         
-def hello():
+def light_up_leds():
     global currentButtonsPressed
     global stopThreads
     
@@ -161,6 +171,8 @@ def hello():
             pinRightLed.write(1)
         else:
             pinRightLed.write(0)
+            
+
         
 
 print("You can start steering now")
@@ -168,7 +180,7 @@ print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
 thread1 = Thread(target = get_keys)
 thread1.start()
 
-thread2 = Thread(target = hello)
+thread2 = Thread(target = light_up_leds)
 thread2.start()
 
 print("Exiting program")
