@@ -1,6 +1,8 @@
 from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener
 from time import sleep
+import time #fjern
+from threading import Thread
 
 # define board
 board = Arduino("COM7")
@@ -9,6 +11,8 @@ it = util.Iterator(board)
 it.start()
 
 sleep(1)
+
+stopThreads = False
 
 # dictionary to keep track of which buttons are pressed at any time
 currentButtonsPressed = {'w': 0, 's': 0, 'a': 0, 'd': 0}
@@ -19,10 +23,16 @@ pinLFNum = 10
 pinRBNum = 9
 pinRFNum = 6
 
+pinRightLedNum = 2
+pinLeftLedNum = 13
+
 pinLB = board.get_pin(f"d:{pinLBNum}:o")
 pinLF = board.get_pin(f"d:{pinLFNum}:o")
 pinRB = board.get_pin(f"d:{pinRBNum}:o")
 pinRF = board.get_pin(f"d:{pinRFNum}:o")
+
+pinRightLed = board.get_pin(f"d:{pinRightLedNum}:o")
+pinLeftLed = board.get_pin(f"d:{pinLeftLedNum}:o")
 
 # moves the car according to input for directions
 def move(directionSpeeds):
@@ -128,10 +138,37 @@ def on_release(key):
    
 # procedure for key listening
 def get_keys():
+    global stopThreads
+
     with Listener(on_press=on_press, on_release = on_release) as listener:
         listener.join()
+        stopThreads = True
+        
+def hello():
+    global currentButtonsPressed
+    global stopThreads
+    
+    while True:
+        if stopThreads:
+            return False
+    
+        if currentButtonsPressed['a'] == 1:
+            pinLeftLed.write(1)
+        else:
+            pinLeftLed.write(0)
+        
+        if currentButtonsPressed['d'] == 1:
+            pinRightLed.write(1)
+        else:
+            pinRightLed.write(0)
+        
 
 print("You can start steering now")
 print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
-get_keys()
+thread1 = Thread(target = get_keys)
+thread1.start()
+
+thread2 = Thread(target = hello)
+thread2.start()
+
 print("Exiting program")
