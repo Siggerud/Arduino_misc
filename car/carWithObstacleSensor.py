@@ -14,37 +14,41 @@ sleep(1)
 currentButtonsPressed = {'w': 0, 's': 0, 'a': 0, 'd': 0, 'h': 0}
 
 # define pins
-pinLBNum = 11
-pinLFNum = 10
-pinRBNum = 9
-pinRFNum = 6
+pinLeftBackNum = 11
+pinLeftForwardNum = 10
+pinRightBackNum = 9
+pinRightForwardNum = 6
 
 pinRightLedNum = 2
 pinLeftLedNum = 13
 
+pinObstacleSensorNum = 3
+
 honkPinNum = 8
 
-pinLB = board.get_pin(f"d:{pinLBNum}:o")
-pinLF = board.get_pin(f"d:{pinLFNum}:o")
-pinRB = board.get_pin(f"d:{pinRBNum}:o")
-pinRF = board.get_pin(f"d:{pinRFNum}:o")
+pinLeftBack = board.get_pin(f"d:{pinLeftBackNum}:o")
+pinLeftForward = board.get_pin(f"d:{pinLeftForwardNum}:o")
+pinRightBack = board.get_pin(f"d:{pinRightBackNum}:o")
+pinRightForward = board.get_pin(f"d:{pinRightForwardNum}:o")
 
 pinRightLed = board.get_pin(f"d:{pinRightLedNum}:o")
 pinLeftLed = board.get_pin(f"d:{pinLeftLedNum}:o")
+
+pinObstacleSensor = board.get_pin(f"d:{pinObstacleSensorNum}:")
 
 honkPin = board.get_pin(f"d:{honkPinNum}:o")
 
 # moves the car according to input for directions
 def move(directionSpeeds):
-    global pinLB
-    global pinLF
-    global pinRB
-    global pinRF
+    global pinLeftBack
+    global pinLeftForward
+    global pinRightBack
+    global pinRightForward
     
-    pinRB.write(directionSpeeds[0])
-    pinRF.write(directionSpeeds[1])
-    pinLB.write(directionSpeeds[2])
-    pinLF.write(directionSpeeds[3])
+    pinRightBack.write(directionSpeeds[0])
+    pinRightForward.write(directionSpeeds[1])
+    pinLeftBack.write(directionSpeeds[2])
+    pinLeftForward.write(directionSpeeds[3])
 
 def advance():
     directionSpeeds = [0, 1, 0, 1]
@@ -92,16 +96,20 @@ def set_current_buttons_pressed(button, action):
         elif action == "pressed":
             value = 1
         currentButtonsPressed[button] = value
-        print(f"{button} {action}")
-        print(currentButtonsPressed)
-        
+
+# drives according to user input, stops if car is too close too obstacle       
 def drive(button):
     global currentButtonsPressed
+    global stopCar
   
     if button == "w":
         advance()
     elif button == "s":
-        back()
+        if too_close_to_obstacle():
+            stop()
+            print("Stopping car")
+        else:
+            back()
     elif button == "a":
         if currentButtonsPressed['w'] == 1:
             turn_left_while_forward()
@@ -117,13 +125,15 @@ def drive(button):
         else:
             turn_right()
 
+# makes the buzzer 'honk'
 def honk(button, action):
     if button == 'h':
         if action == "pressed":
             honkPin.write(1)
         elif action == "released":
             honkPin.write(0)
-            
+
+# lights up leds when turning the car          
 def light_up_leds():
     if currentButtonsPressed['a'] == 1:
         pinLeftLed.write(1)
@@ -140,8 +150,7 @@ def on_press(key):
     # if delete is pressed, then exit thread
     if key == Key.delete:
         return False
-    
-    # move car if 'w', 's', 'a' or 'd' is pushed
+     
     try:
         buttonPressed = key.char
         
@@ -153,7 +162,6 @@ def on_press(key):
         honk(buttonPressed, "pressed")
         
         light_up_leds()
-        
     except:
         stop()
 
@@ -168,6 +176,7 @@ def on_release(key):
         honk(buttonReleased, "released")
         
         light_up_leds()
+        
     except:
         pass
    
@@ -176,8 +185,20 @@ def get_keys():
     with Listener(on_press=on_press, on_release = on_release) as listener:
         listener.join() 
 
+# checks if car is too close to a obstacle
+def too_close_to_obstacle():
+    global pinObstacleSensor
+    global currentButtonsPressed
+    global stopCar
+
+    noDanger = pinObstacleSensor.read()
+    
+    if noDanger == False:
+        return True
+    else:
+        return False
+
 print("You can start steering now")
 print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
 get_keys()
-
 print("Exiting program")
