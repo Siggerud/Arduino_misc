@@ -144,6 +144,12 @@ def light_up_leds():
         pinRightLed.write(1)
     else:
         pinRightLed.write(0)
+        
+def light_up_leds_on_white_ground():
+    if sensorPin.read():
+        print("black")
+    else:
+        print("white")
 
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
@@ -162,6 +168,10 @@ def on_press(key):
         honk(buttonPressed, "pressed")
         
         light_up_leds()
+        
+        light_up_leds_on_white_ground()
+        
+        
     except:
         stop()
 
