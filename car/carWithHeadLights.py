@@ -216,7 +216,6 @@ def on_release(key):
         
         light_up_leds_on_white_ground()
         
-        light_up_headlights()
     except:
         pass
    

@@ -13,6 +13,8 @@ sleep(1)
 # dictionary to keep track of which buttons are pressed at any time
 currentButtonsPressed = {'w': 0, 's': 0, 'a': 0, 'd': 0, 'h': 0}
 
+headlightsOn = True
+
 # define pins
 pinLeftBackNum = 11
 pinLeftForwardNum = 10
@@ -22,6 +24,9 @@ pinRightForwardNum = 6
 pinRightLedNum = 2
 pinLeftLedNum = 13
 pinYellowLedNum = 4
+
+pinHeadlightsNum = 7
+pinBrakelightsNum = 12
 
 pinObstacleSensorNum = 3
 pinLineTrackingSensorNum = 5
@@ -36,6 +41,9 @@ pinRightForward = board.get_pin(f"d:{pinRightForwardNum}:o")
 pinRightLed = board.get_pin(f"d:{pinRightLedNum}:o")
 pinLeftLed = board.get_pin(f"d:{pinLeftLedNum}:o")
 pinYellowLed = board.get_pin(f"d:{pinYellowLedNum}:o")
+
+pinHeadlights = board.get_pin(f"d:{pinHeadlightsNum}:o")
+pinBrakelights = board.get_pin(f"d:{pinBrakelightsNum}:o")
 
 pinObstacleSensor = board.get_pin(f"d:{pinObstacleSensorNum}:i")
 pinLineTrackingSensor = board.get_pin(f"d:{pinLineTrackingSensorNum}:i")
@@ -139,6 +147,8 @@ def honk(button, action):
 
 # lights up leds when turning the car          
 def light_up_leds():
+    global currentButtonsPressed
+
     if currentButtonsPressed['a'] == 1:
         pinLeftLed.write(1)
     else:
@@ -159,6 +169,27 @@ def light_up_leds_on_white_ground():
     else:
         pinYellowLed.write(1)
 
+# lights up headlights
+def light_up_headlights(button):
+    global headlightsOn
+
+    if button == 'l':
+        if headlightsOn:
+            pinHeadlights.write(0)
+            headlightsOn = False
+        else:
+            pinHeadlights.write(1)
+            headlightsOn = True
+
+# lights up brake lights        
+def light_up_brakelights():
+    global currentButtonsPressed
+    
+    if currentButtonsPressed['s'] == 1:
+        pinBrakelights.write(1)
+    else:
+        pinBrakelights.write(0)
+
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
     # if delete is pressed, then exit thread
@@ -178,6 +209,10 @@ def on_press(key):
         light_up_leds()
         
         light_up_leds_on_white_ground()
+        
+        light_up_headlights(buttonPressed)
+        
+        light_up_brakelights()
     except:
         stop()
 
@@ -195,6 +230,7 @@ def on_release(key):
         
         light_up_leds_on_white_ground()
         
+        light_up_brakelights()
     except:
         pass
    
@@ -216,7 +252,13 @@ def too_close_to_obstacle():
     else:
         return False
 
+# turn on headlights
+pinHeadlights.write(1)
+
 print("You can start steering now")
 print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
+
+# start main loop
 get_keys()
+
 print("Exiting program")
