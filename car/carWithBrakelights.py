@@ -252,11 +252,58 @@ def too_close_to_obstacle():
     else:
         return False
 
-# turn on headlights
-pinHeadlights.write(1)
+# prints a suitable text for testing        
+def print_test_text(testText):
+    print(f"Testing {testText}...")
 
+# tests leds by blinking eight times
+def test_led(pin, pinName):
+    print_test_text(pinName)
+    for i in range(8):
+        pin.write(1)
+        sleep(0.1)
+        pin.write(0)
+        sleep(0.1)
+
+# tests if sensors are receiving input        
+def test_sensor(pin, sensorName):
+    print_test_text(sensorName)
+    if pin.read() == None:
+        print(f"Something wrong with {sensorName}. No value detected.")
+    else:
+        print("All good!")
+       
+# tests all functions on car
+def test_car_on_startup():
+    test_led(pinBrakelights, "brake lights")
+        
+    test_led(pinHeadlights, "head lights")
+        
+    test_led(pinLeftLed, "left turn light")
+    
+    test_led(pinRightLed, "right turn light")
+    
+    test_led(pinYellowLed, "line tracker light")
+        
+    print_test_text("horn")
+    honkPin.write(1)
+    sleep(0.5)
+    honkPin.write(0)
+    
+    test_sensor(pinObstacleSensor, "obstacle sensor")
+        
+    test_sensor(pinLineTrackingSensor, "line tracking sensor")
+        
+
+# tests the cars functions
+test_car_on_startup()
+
+# explanatory text
 print("You can start steering now")
 print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
+
+# turn on headlights
+pinHeadlights.write(1)
 
 # start main loop
 get_keys()
