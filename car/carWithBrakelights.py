@@ -259,6 +259,7 @@ def print_test_text(testText):
 # tests leds by blinking eight times
 def test_led(pin, pinName):
     print_test_text(pinName)
+    sleep(0.5)
     for i in range(8):
         pin.write(1)
         sleep(0.1)
@@ -268,6 +269,7 @@ def test_led(pin, pinName):
 # tests if sensors are receiving input        
 def test_sensor(pin, sensorName):
     print_test_text(sensorName)
+    sleep(0.5)
     if pin.read() == None:
         print(f"Something wrong with {sensorName}. No value detected.")
     else:
@@ -286,7 +288,8 @@ def test_car_on_startup():
     test_led(pinYellowLed, "line tracker light")
         
     print_test_text("horn")
-    honkPin.write(1)
+    sleep(0.5)
+    honkPin.write(1) # honk for half a second
     sleep(0.5)
     honkPin.write(0)
     
