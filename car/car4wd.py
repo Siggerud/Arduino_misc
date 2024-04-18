@@ -1,5 +1,5 @@
 from pyfirmata2 import Arduino, util
-from pynput.keyboard import Key, Listener
+from pynput.keyboard import Key, Listener, KeyCode
 from time import sleep
 
 # define board
@@ -13,35 +13,41 @@ sleep(1)
 # dictionary to keep track of which buttons are pressed at any time
 currentButtonsPressed = {'w': 0, 's': 0, 'a': 0, 'd': 0, 'h': 0}
 
-headlightsOn = True
+#headlightsOn = True
+
+currentAngle = 90
 
 # define pins
-pinLBNum = 7
-pinLFNum = 6
-pinRBNum = 5
-pinRFNum = 4
+pinRBNum = 7
+pinRFNum = 6
+pinLBNum = 5
+pinLFNum = 4
 
-pinRightLedNum = 2
-pinLeftLedNum = 13
-pinYellowLedNum = 4
+#pinRightLedNum = 2
+#pinLeftLedNum = 13
+#pinYellowLedNum = 4
 
-pinHeadlightsNum = 8
-pinBrakelightsNum = 12
+#pinHeadlightsNum = 8
+#pinBrakelightsNum = 12
 
-pinObstacleSensorNum = 3
-pinLineTrackingSensorNum = 5
+#pinObstacleSensorNum = 3
+#pinLineTrackingSensorNum = 5
 
-honkPinNum = 8
+pinServoNum = 2
+pinFloodLightsNum = 3
+#honkPinNum = 8
 
 pinLeftBack = board.get_pin(f"d:{pinLBNum}:o")
 pinLeftForward = board.get_pin(f"d:{pinLFNum}:o")
 pinRightBack = board.get_pin(f"d:{pinRBNum}:o")
 pinRightForward = board.get_pin(f"d:{pinRFNum}:o")
 
+pinServo = board.get_pin(f"d:{pinServoNum}:s")
+pinFloodLights = board.get_pin(f"d:{pinFloodLightsNum}:o")
 #pinRightLed = board.get_pin(f"d:{pinRightLedNum}:o")
 #pinLeftLed = board.get_pin(f"d:{pinLeftLedNum}:o")
 #pinYellowLed = board.get_pin(f"d:{pinYellowLedNum}:o")
-pinHeadlights = board.get_pin(f"d:{pinHeadlightsNum}:o")
+#pinHeadlights = board.get_pin(f"d:{pinHeadlightsNum}:o")
 #pinBrakelights = board.get_pin(f"d:{pinBrakelightsNum}:o")
 
 #pinObstacleSensor = board.get_pin(f"d:{pinObstacleSensorNum}:i")
@@ -74,11 +80,11 @@ def stop():
     move(directionSpeeds)
     
 def turn_right():
-    directionSpeeds = [0, 1, 1, 0]
+    directionSpeeds = [1, 0, 0, 1]
     move(directionSpeeds)
 
 def turn_left():
-    directionSpeeds = [1, 0, 0, 1]
+    directionSpeeds = [0, 1, 1, 0]
     move(directionSpeeds)
     
 def turn_left_while_forward():
@@ -181,6 +187,19 @@ def light_up_headlights(button):
             print("yes")
             pinHeadlights.write(1)
             headlightsOn = True
+            
+# lights up headlights
+def light_up_flood_lights(button):
+    global floodLightsOn
+
+    if button == 'f':
+        if floodLightsOn:
+            pinFloodLights.write(0)
+            
+            floodLightsOn = False
+        else:
+            pinFloodLights.write(1)
+            floodLightsOn = True
 
 # lights up brake lights        
 def light_up_brakelights():
@@ -190,6 +209,31 @@ def light_up_brakelights():
         pinBrakelights.write(1)
     else:
         pinBrakelights.write(0)
+        
+def move_servo(key):
+    global currentAngle
+    global pinServo
+    
+    if key != Key.left and key != Key.right:
+        return
+    
+    moveServo = False
+            
+    if key == Key.left:
+        if currentAngle > 4:
+            angle = currentAngle - 5
+            moveServo = True
+            
+    if key == Key.right:
+        if currentAngle < 175:
+            angle = currentAngle + 5
+            moveServo = True
+            
+    if moveServo:
+        pinServo.write(angle)
+        currentAngle = angle
+        sleep(0.005)
+        
 
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
@@ -197,7 +241,7 @@ def on_press(key):
     if key == Key.delete:
         return False
      
-    try:
+    if type(key) == KeyCode:
         buttonPressed = key.char
         
         # set which button is currently pressed
@@ -205,23 +249,25 @@ def on_press(key):
         
         drive(buttonPressed)
         
+        light_up_flood_lights(buttonPressed)
+        
         #honk(buttonPressed, "pressed")
         
         #light_up_leds()
         
         #light_up_leds_on_white_ground()
         
-        light_up_headlights(buttonPressed)
+        #light_up_headlights(buttonPressed)
         
         #light_up_brakelights()
-    except:
-        stop()
+    elif type(key) == Key:
+        move_servo(key)
 
 #procedure for what do when releasing buttons
 def on_release(key):
     stop()
-    
-    try:
+
+    if type(key) == KeyCode:
         buttonReleased = key.char
         set_current_buttons_pressed(buttonReleased, "released")
         
@@ -232,7 +278,7 @@ def on_release(key):
         #light_up_leds_on_white_ground()
         
         #light_up_brakelights()
-    except:
+    elif type(key) == Key:
         pass
    
 # procedure for key listening
@@ -307,9 +353,13 @@ print("You can start steering now")
 print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
 
 # turn on headlights
-pinHeadlights.write(1)
-#pin = board.get_pin("d:2:o")
-#pin.write(1)
+#pinHeadlights.write(1)
+
+# turn on flood lights
+pinFloodLights.write(1)
+floodLightsOn = True
+
+pinServo.write(currentAngle)
 
 # start main loop
 get_keys()
