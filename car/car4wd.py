@@ -2,6 +2,9 @@ from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener, KeyCode
 from time import sleep
 import controllableCar
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from threading import Thread
 
 # define board
 board = Arduino("COM7")
@@ -10,6 +13,8 @@ it = util.Iterator(board)
 it.start()
 
 sleep(1)
+
+stopThreads = False
 
 # define pins
 pinRBNum = 7
@@ -33,12 +38,28 @@ pinFloodLights = board.get_pin(f"d:{pinFloodLightsNum}:o")
 pinHeadLights = board.get_pin(f"d:{pinHeadLightsNum}:o")
 pinBrakeLights = board.get_pin(f"d:{pinBrakeLightsNum}:o")
 pinHonk = board.get_pin(f"d:{pinHonkNum}:o")
+
+pinMicrophone = board.get_pin("a:0:o")
+
+def read_microphone():
+    global pinMicrophone
+    global stopThreads
+
+    while True:
+        if stopThreads:
+            return False
         
+        print(pinMicrophone.read())
+        
+        sleep(0.5)
+  
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
     # if delete is pressed, then exit thread
     if key == Key.delete:
         return False
+        
+    
      
     global car
     if type(key) == KeyCode:
@@ -69,8 +90,11 @@ def on_release(key):
    
 # procedure for key listening
 def get_keys():
+    global stopThreads
+
     with Listener(on_press=on_press, on_release = on_release) as listener:
         listener.join() 
+        stopThreads = True
 
 # explanatory text
 print("You can start steering now")
@@ -96,7 +120,11 @@ car.add_reverse_sound(pinHonk)
 car.toggle_on_light("l")
 
 # start main loop
-get_keys()
+thread1 = Thread(target = get_keys)
+thread1.start()
+
+thread2 = Thread(target = read_microphone)
+thread2.start()
 
 print("Exiting program")
 
