@@ -2,9 +2,6 @@ from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener, KeyCode
 from time import sleep
 import controllableCar
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from threading import Thread
 
 # define board
 board = Arduino("COM7")
@@ -39,19 +36,6 @@ pinHeadLights = board.get_pin(f"d:{pinHeadLightsNum}:o")
 pinBrakeLights = board.get_pin(f"d:{pinBrakeLightsNum}:o")
 pinHonk = board.get_pin(f"d:{pinHonkNum}:o")
 
-pinMicrophone = board.get_pin("a:0:o")
-
-def read_microphone():
-    global pinMicrophone
-    global stopThreads
-
-    while True:
-        if stopThreads:
-            return False
-        
-        print(pinMicrophone.read())
-        
-        sleep(0.5)
   
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
@@ -120,11 +104,18 @@ car.add_reverse_sound(pinHonk)
 car.toggle_on_light("l")
 
 # start main loop
-thread1 = Thread(target = get_keys)
-thread1.start()
+#get_keys()
 
-thread2 = Thread(target = read_microphone)
-thread2.start()
+
+
+def check_motion_sensor():
+    pin = board.get_pin("a:0:i")
+    
+    while True:
+        print(pin.read())
+        sleep(0.25)
+    
+check_motion_sensor()   
 
 print("Exiting program")
 
