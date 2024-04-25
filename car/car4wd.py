@@ -2,6 +2,9 @@ from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener, KeyCode
 from time import sleep
 import controllableCar
+from threading import Thread
+import sensorGUI
+from tkinter import Tk
 
 # define board
 board = Arduino("COM7")
@@ -79,6 +82,11 @@ def get_keys():
     with Listener(on_press=on_press, on_release = on_release) as listener:
         listener.join() 
         stopThreads = True
+        
+def start_gui():
+    master = Tk()
+    myGUI = sensorGUI.SensorGUI(master)
+    master.mainloop()
 
 # explanatory text
 print("You can start steering now")
@@ -104,18 +112,11 @@ car.add_reverse_sound(pinHonk)
 car.toggle_on_light("l")
 
 # start main loop
-#get_keys()
+thread1 = Thread(target = get_keys)
+thread1.start()
 
-
-
-def check_motion_sensor():
-    pin = board.get_pin("a:0:i")
-    
-    while True:
-        print(pin.read())
-        sleep(0.25)
-    
-check_motion_sensor()   
+thread2 = Thread(target = start_gui)
+thread2.start()
 
 print("Exiting program")
 
