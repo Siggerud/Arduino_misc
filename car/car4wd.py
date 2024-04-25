@@ -104,18 +104,7 @@ car.add_reverse_sound(pinHonk)
 car.toggle_on_light("l")
 
 # start main loop
-#get_keys()
-
-
-
-def check_motion_sensor():
-    pin = board.get_pin("a:0:i")
-    
-    while True:
-        print(pin.read())
-        sleep(0.25)
-    
-check_motion_sensor()   
+get_keys() 
 
 print("Exiting program")
 
