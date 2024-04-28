@@ -1,25 +1,69 @@
-from tkinter import Label, ttk, StringVar, Button, IntVar, Entry
+from tkinter import Label, ttk, StringVar, Button, IntVar, Entry, END
+from datetime import datetime
+import random
+from time import sleep
+from pyfirmata2 import Arduino
 from datetime import datetime
 
 class SensorGUI:
     # class for creating a ski weather summary GUI
-    def __init__(self, master):
-        
+    def __init__(self, master, temperaturePin, inputVoltage=5):
         self._master = master
-        self._master.title("Sensor data")
         self._master.geometry("600x350")
+        self._set_current_time_in_title()
         
         #fonts
         boldFont = ("Helvetica", 10, "bold")
         regularFont = ("Helvetica", 10)
-
+        
+        self._inputVoltage = inputVoltage
+        
+        self._tempPin = temperaturePin
         
         temperatureLabel = Label(master, text="Temperature", font=regularFont)
-        temperatureLabel.grid(row=0, column=0, sticky="w", columnspan=2, pady=1, ipadx=3)
+        temperatureLabel.grid(row=0, column=0, sticky="w")
         
-        self._tempValue = StringVar()
-        temperatureEntry = Entry(master, textvariable=self._tempValue)
-        temperatureEntry.grid(row=1, column=0)
+        self._temperatureEntry = Entry(master)
+        self._temperatureEntry.grid(row=0, column=1)
+        self._update_temperature()
+        
+        humidityLabel = Label(master, text="Humidity", font=regularFont)
+        humidityLabel.grid(row=1, column=0, sticky="w")
+        
+        self._humidityEntry = Entry(master)
+        self._humidityEntry.grid(row=1, column=1)
+        self._update_humidity()
+        
+    def _update_temperature(self):
+        tempValue = self._temperatureEntry.get()
+        tempReading = self._tempPin.read()
+        if tempReading:
+            tempValue = f"{self._get_temperature_from_analog_input(tempReading):.2f}"
+        self._temperatureEntry.delete(0, END) #deletes the current value
+        self._temperatureEntry.insert(0, tempValue) # inserts the new value
+        self._temperatureEntry.after(1000, self._update_temperature)
+        
+    def _update_humidity(self):
+        humidityValue = str(random.randint(10,20))
+        self._humidityEntry.delete(0, END) #deletes the current value
+        self._humidityEntry.insert(0, humidityValue)
+        self._humidityEntry.after(1000, self._update_humidity)
+        
+    def _set_current_time_in_title(self):
+        timeNow = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        self._master.title("Sensor data " + timeNow)
+        self._master.after(1000, self._set_current_time_in_title)
+        
+    def _convert_from_analog_input_to_voltage(self, analogValue):
+        return analogValue * self._inputVoltage
+        
+    def _get_temperature_from_analog_input(self, analogValue):
+        voltage = self._convert_from_analog_input_to_voltage(analogValue)
+        
+        return (voltage - 0.5) * 100
+        
+    
+        
         """
         # input widgets
         whereLabel = Label(master, text="Where do you want to ski?", font=regularFont)

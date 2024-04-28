@@ -154,7 +154,7 @@ class controllableCar:
                     self._make_reverse_sound()
                 
             elif key == self._leftCommand:
-                if self._currentKeysPressed[self._leftCommand] == 1:
+                if self._currentKeysPressed[self._driveCommand] == 1:
                     self._turn_left_while_forward()
                 elif self._currentKeysPressed[self._rightCommand] == 1:
                     self._turn_left_while_backward()
