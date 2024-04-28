@@ -4,14 +4,19 @@ from time import sleep, time
 
 class controllableCar:
     def __init__(self, pinLeftReverse, pinLeftForward, pinRightReverse, pinRightForward, driveCommand="w", reverseCommand="s", leftCommand="a", rightCommand="d"):
+        
+        # driving pins
         self._pinLeftReverse = pinLeftReverse
         self._pinLeftForward = pinLeftForward
         self._pinRightReverse = pinRightReverse
         self._pinRightForward = pinRightForward
+        
+        # driving commands
         self._driveCommand = driveCommand
         self._reverseCommand = reverseCommand
         self._leftCommand = leftCommand
         self._rightCommand = rightCommand
+        
         self._currentKeysPressed = {self._driveCommand: 0, self._reverseCommand: 0, self._leftCommand: 0, self._rightCommand: 0}
         self._onOffLightCommandsAndPins = {}
         self._servoSet = False
@@ -22,6 +27,33 @@ class controllableCar:
         self._startTime = time()
         self._timerRunning = False
         self._reverseSoundOn = False
+        
+        # obstacle sensor pins
+        self._frontObstacleSensorPin = None
+        self._backObstacleSensorPin = None
+        self._leftObstacleSensorPin = None
+        self._rightObstacleSensorPin = None
+        
+        self._frontObstacleSensorSet = False
+        self._backObstacleSensorSet = False
+        self._leftObstacleSensorSet = False
+        self._rightObstacleSensorSet = False
+        
+    def add_obstacle_sensor(self, pin, side):
+        if side == "front":
+            self._frontObstacleSensorPin = pin
+            self._frontObstacleSensorSet = True
+        elif side == "back":
+            self._backObstacleSensorPin = pin
+            self._backObstacleSensorSet = True
+        elif side == "left":
+            self._leftObstacleSensorPin = pin
+            self._leftObstacleSensorSet = True
+        elif side == "right":
+            self._rightObstacleSensorPin = pin
+            self._rightObstacleSensorSet = True
+        else:
+            raise SideNotFoundError 
         
     def add_brake_lights(self, pin):
         self._brakeLightPin = pin
@@ -138,35 +170,62 @@ class controllableCar:
                 self._pinServo.write(angle)
                 self._currentServoAngle = angle
                 sleep(0.005)
+    
+    def _too_close(self, pin):
+        pinValue = pin.read()
+        print(pinValue)
+        return not pinValue
+    
+    def _stop_or_move(self, func, pin):
+        if self._too_close(pin):
+            self._stop()
+        else:
+            func()
         
     # drives according to user input, stops if car is too close too obstacle       
     def drive(self, key, action):
         if action == "pressed":
             if key == self._driveCommand:
-                self._advance()
+                if self._frontObstacleSensorSet:
+                    self._stop_or_move(self._advance, self._frontObstacleSensorPin)
+                else:
+                    self._advance()
             elif key == self._reverseCommand:
-                self._back()
-                print("reverse")
-                if self._brakeLightsSet:
-                    self._brakeLightPin.write(1)
-                    
-                if self._reverseSoundSet:
-                    self._make_reverse_sound()
+                if self._backObstacleSensorSet:
+                    self._stop_or_move(self._back, self._backObstacleSensorPin)
+                else:
+                    self._back()
+  
+                    if self._brakeLightsSet:
+                        self._brakeLightPin.write(1)
+                        
+                    if self._reverseSoundSet:
+                        self._make_reverse_sound()
                 
             elif key == self._leftCommand:
-                if self._currentKeysPressed[self._driveCommand] == 1:
-                    self._turn_left_while_forward()
+                if self._currentKeysPressed[self._leftCommand] == 1:
+                    func = self._turn_left_while_forward
                 elif self._currentKeysPressed[self._rightCommand] == 1:
-                    self._turn_left_while_backward()
+                    func = self._turn_left_while_backward
                 else:
-                    self._turn_left()
+                    func = self._turn_left
+                    
+                if self._leftObstacleSensorSet:
+                    self._stop_or_move(func, self._leftObstacleSensorPin)
+                else:
+                    func()
             elif key == self._rightCommand:
                 if self._currentKeysPressed[self._driveCommand] == 1:
-                    self._turn_right_while_forward()
+                    func = self._turn_right_while_forward
                 elif self._currentKeysPressed[self._reverseCommand] == 1:
-                    self._turn_right_while_backward()
+                    func = self._turn_right_while_backward
                 else:
-                    self._turn_right()
+                    func = self._turn_right
+                    
+                if self._rightObstacleSensorSet:
+                    self._stop_or_move(func, self._rightObstacleSensorPin)
+                else:
+                    func()
         elif action == "released":
             self._stop()
             
@@ -231,4 +290,7 @@ class controllableCar:
         
         
 class ComponentNotSetError(Exception):
+    pass
+    
+class SideNotFoundError(Exception):
     pass

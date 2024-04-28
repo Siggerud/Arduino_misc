@@ -28,6 +28,7 @@ pinFloodLightsNum = 3
 pinHeadLightsNum = 8
 pinBrakeLightsNum = 10
 pinHonkNum = 9
+pinObstacleSensorFront = 12
 
 pinManager = pinManager.PinManager(board)
 
@@ -41,6 +42,7 @@ pinFloodLights = pinManager.add_digital_pin_output(pinFloodLightsNum)
 pinHeadLights = pinManager.add_digital_pin_output(pinHeadLightsNum)
 pinBrakeLights = pinManager.add_digital_pin_output(pinBrakeLightsNum)
 pinHonk = pinManager.add_digital_pin_output(pinHonkNum)
+pinObstacleSensorFront = pinManager.add_digital_pin_input(pinObstacleSensorFront)
   
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
@@ -120,6 +122,8 @@ car.add_reverse_sound(pinHonk)
 
 # light up headlights
 car.toggle_on_light("l")
+
+car.add_obstacle_sensor(pinObstacleSensorFront, "front")
 
 # start main loop
 thread1 = Thread(target = get_keys)
