@@ -1,13 +1,12 @@
 from tkinter import Label, ttk, StringVar, Button, IntVar, Entry, END
 from datetime import datetime
-import random
 from time import sleep
 from pyfirmata2 import Arduino
 from datetime import datetime
 
 class SensorGUI:
     # class for creating a ski weather summary GUI
-    def __init__(self, master, temperaturePin, inputVoltage=5):
+    def __init__(self, master, temperaturePin, noisePin, inputVoltage=5, updateReadingFrequency=500):
         self._master = master
         self._master.geometry("600x350")
         self._set_current_time_in_title()
@@ -17,8 +16,10 @@ class SensorGUI:
         regularFont = ("Helvetica", 10)
         
         self._inputVoltage = inputVoltage
+        self._updateReadingFrequency = updateReadingFrequency
         
         self._tempPin = temperaturePin
+        self._noisePin = noisePin
         
         temperatureLabel = Label(master, text="Temperature", font=regularFont)
         temperatureLabel.grid(row=0, column=0, sticky="w")
@@ -27,27 +28,30 @@ class SensorGUI:
         self._temperatureEntry.grid(row=0, column=1)
         self._update_temperature()
         
-        humidityLabel = Label(master, text="Humidity", font=regularFont)
-        humidityLabel.grid(row=1, column=0, sticky="w")
+        noiseLabel = Label(master, text="Noise", font=regularFont)
+        noiseLabel.grid(row=1, column=0, sticky="w")
         
-        self._humidityEntry = Entry(master)
-        self._humidityEntry.grid(row=1, column=1)
-        self._update_humidity()
+        self._noiseEntry = Entry(master)
+        self._noiseEntry.grid(row=1, column=1)
+        self._update_noise()
         
     def _update_temperature(self):
-        tempValue = self._temperatureEntry.get()
+        tempValue = "None"
         tempReading = self._tempPin.read()
         if tempReading:
             tempValue = f"{self._get_temperature_from_analog_input(tempReading):.2f}"
         self._temperatureEntry.delete(0, END) #deletes the current value
         self._temperatureEntry.insert(0, tempValue) # inserts the new value
-        self._temperatureEntry.after(1000, self._update_temperature)
+        self._temperatureEntry.after(self._updateReadingFrequency, self._update_temperature)
         
-    def _update_humidity(self):
-        humidityValue = str(random.randint(10,20))
-        self._humidityEntry.delete(0, END) #deletes the current value
-        self._humidityEntry.insert(0, humidityValue)
-        self._humidityEntry.after(1000, self._update_humidity)
+    def _update_noise(self):
+        noiseValue = "None"
+        noiseReading = self._noisePin.read()
+        if noiseReading:
+            noiseValue = f"{self._get_noise_from_analog_input(noiseReading):.2f}"
+        self._noiseEntry.delete(0, END) #deletes the current value
+        self._noiseEntry.insert(0, noiseValue) # inserts the new value
+        self._noiseEntry.after(self._updateReadingFrequency, self._update_noise)
         
     def _set_current_time_in_title(self):
         timeNow = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
@@ -61,6 +65,11 @@ class SensorGUI:
         voltage = self._convert_from_analog_input_to_voltage(analogValue)
         
         return (voltage - 0.5) * 100
+        
+    def _get_noise_from_analog_input(self, analogValue):
+        voltage = (self._convert_from_analog_input_to_voltage(analogValue))
+        
+        return voltage
         
     
         

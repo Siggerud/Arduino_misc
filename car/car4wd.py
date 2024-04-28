@@ -87,10 +87,14 @@ def get_keys():
         
 def start_gui():
     master = Tk()
-    #pin = board.get_pin("a:0:i")
+
     tempPinNum = 0
+    noisePinNum = 5
+    
     tempPin = pinManager.add_analog_pin_input(tempPinNum)
-    myGUI = sensorGUI.SensorGUI(master, tempPin)
+    noisePin = pinManager.add_analog_pin_input(noisePinNum)
+    
+    myGUI = sensorGUI.SensorGUI(master, tempPin, noisePin)
     master.mainloop()
     
 
