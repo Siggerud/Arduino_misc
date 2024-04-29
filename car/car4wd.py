@@ -2,6 +2,10 @@ from pyfirmata2 import Arduino, util
 from pynput.keyboard import Key, Listener, KeyCode
 from time import sleep
 import controllableCar
+from threading import Thread
+import sensorGUI
+from tkinter import Tk
+import pinManager
 
 # define board
 board = Arduino("COM7")
@@ -24,19 +28,24 @@ pinFloodLightsNum = 3
 pinHeadLightsNum = 8
 pinBrakeLightsNum = 10
 pinHonkNum = 9
+pinObstacleSensorBackNum = 11
+pinObstacleSensorFrontNum = 12
 
-pinLeftBack = board.get_pin(f"d:{pinLBNum}:o")
-pinLeftForward = board.get_pin(f"d:{pinLFNum}:o")
-pinRightBack = board.get_pin(f"d:{pinRBNum}:o")
-pinRightForward = board.get_pin(f"d:{pinRFNum}:o")
+pinManager = pinManager.PinManager(board)
 
-pinServo = board.get_pin(f"d:{pinServoNum}:s")
-pinFloodLights = board.get_pin(f"d:{pinFloodLightsNum}:o")
-pinHeadLights = board.get_pin(f"d:{pinHeadLightsNum}:o")
-pinBrakeLights = board.get_pin(f"d:{pinBrakeLightsNum}:o")
-pinHonk = board.get_pin(f"d:{pinHonkNum}:o")
+pinLeftBack = pinManager.add_digital_pin_output(pinLBNum)
+pinLeftForward = pinManager.add_digital_pin_output(pinLFNum)
+pinRightBack = pinManager.add_digital_pin_output(pinRBNum)
+pinRightForward = pinManager.add_digital_pin_output(pinRFNum)
 
-  
+pinServo = pinManager.add_digital_pin_servo(pinServoNum)
+pinFloodLights = pinManager.add_digital_pin_output(pinFloodLightsNum)
+pinHeadLights = pinManager.add_digital_pin_output(pinHeadLightsNum)
+pinBrakeLights = pinManager.add_digital_pin_output(pinBrakeLightsNum)
+pinHonk = pinManager.add_digital_pin_output(pinHonkNum)
+pinObstacleSensorFront = pinManager.add_digital_pin_input(pinObstacleSensorFrontNum)
+pinObstacleSensorBack = pinManager.add_digital_pin_input(pinObstacleSensorBackNum)
+
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
     # if delete is pressed, then exit thread
@@ -79,6 +88,23 @@ def get_keys():
     with Listener(on_press=on_press, on_release = on_release) as listener:
         listener.join() 
         stopThreads = True
+        
+def start_gui():
+    master = Tk()
+
+    tempPinNum = 0
+    noisePinNum = 5
+    lightFrontPinNum = 1
+    lightBackPinNum = 2
+    
+    tempPin = pinManager.add_analog_pin_input(tempPinNum)
+    noisePin = pinManager.add_analog_pin_input(noisePinNum)
+    lightFrontPin = pinManager.add_analog_pin_input(lightFrontPinNum)
+    lightBackPin = pinManager.add_analog_pin_input(lightBackPinNum)
+    
+    myGUI = sensorGUI.SensorGUI(master, tempPin, noisePin, lightFrontPin, lightBackPin)
+    master.mainloop()
+    
 
 # explanatory text
 print("You can start steering now")
@@ -103,7 +129,18 @@ car.add_reverse_sound(pinHonk)
 # light up headlights
 car.toggle_on_light("l")
 
+# add obstacle sensors
+car.add_obstacle_sensor(pinObstacleSensorFront, "front")
+car.add_obstacle_sensor(pinObstacleSensorBack, "back")
+
 # start main loop
+
+thread1 = Thread(target = get_keys)
+thread1.start()
+
+thread2 = Thread(target = start_gui)
+thread2.start()
+
 get_keys() 
 
 print("Exiting program")
