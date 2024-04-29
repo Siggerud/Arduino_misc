@@ -6,7 +6,7 @@ from datetime import datetime
 
 class SensorGUI:
     # class for creating a ski weather summary GUI
-    def __init__(self, master, temperaturePin, noisePin, lightPin, inputVoltage=5, updateReadingFrequency=500):
+    def __init__(self, master, temperaturePin, noisePin, lightFrontPin, lightBackPin, inputVoltage=5, readingFrequency=500):
         self._master = master
         self._master.geometry("600x350")
         self._set_current_time_in_title()
@@ -16,11 +16,12 @@ class SensorGUI:
         regularFont = ("Helvetica", 10)
         
         self._inputVoltage = inputVoltage
-        self._updateReadingFrequency = updateReadingFrequency
+        self._readingFrequency = readingFrequency
         
         self._tempPin = temperaturePin
         self._noisePin = noisePin
-        self._lightPin = lightPin
+        self._lightFrontPin = lightFrontPin
+        self._lightBackPin = lightBackPin
         
         temperatureLabel = Label(master, text="Temperature", font=regularFont)
         temperatureLabel.grid(row=0, column=0, sticky="w")
@@ -36,12 +37,19 @@ class SensorGUI:
         self._noiseEntry.grid(row=1, column=1)
         self._update_noise()
         
-        lightLabel = Label(master, text="Light", font=regularFont)
-        lightLabel.grid(row=2, column=0, sticky="w")
+        lightLabelFront = Label(master, text="Light front", font=regularFont)
+        lightLabelFront.grid(row=2, column=0, sticky="w")
         
-        self._lightEntry = Entry(master)
-        self._lightEntry.grid(row=2, column=1)
-        self._update_light()
+        self._lightEntryFront = Entry(master)
+        self._lightEntryFront.grid(row=2, column=1)
+        self._update_light_front()
+        
+        lightLabelBack = Label(master, text="Light back", font=regularFont)
+        lightLabelBack.grid(row=3, column=0, sticky="w")
+        
+        self._lightEntryBack = Entry(master)
+        self._lightEntryBack.grid(row=3, column=1)
+        self._update_light_back()
         
     def _update_temperature(self):
         tempValue = "None"
@@ -50,7 +58,7 @@ class SensorGUI:
             tempValue = f"{self._get_temperature_from_analog_input(tempReading):.2f}"
         self._temperatureEntry.delete(0, END) #deletes the current value
         self._temperatureEntry.insert(0, tempValue) # inserts the new value
-        self._temperatureEntry.after(self._updateReadingFrequency, self._update_temperature)
+        self._temperatureEntry.after(self._readingFrequency, self._update_temperature)
         
     def _update_noise(self):
         noiseValue = "None"
@@ -59,17 +67,25 @@ class SensorGUI:
             noiseValue = f"{self._get_noise_from_analog_input(noiseReading):.2f}"
         self._noiseEntry.delete(0, END) #deletes the current value
         self._noiseEntry.insert(0, noiseValue) # inserts the new value
-        self._noiseEntry.after(self._updateReadingFrequency, self._update_noise)
+        self._noiseEntry.after(self._readingFrequency, self._update_noise)
         
-    def _update_light(self):
+    def _update_light_front(self):
         lightValue = "None"
-        lightReading = self._lightPin.read()
+        lightReading = self._lightFrontPin.read()
         if lightReading:
             lightValue = f"{self._get_light_from_analog_input(lightReading):.2f}"
-        self._lightEntry.delete(0, END) #deletes the current value
-        self._lightEntry.insert(0, lightValue) # inserts the new value
-        self._lightEntry.after(self._updateReadingFrequency, self._update_light)    
+        self._lightEntryFront.delete(0, END) #deletes the current value
+        self._lightEntryFront.insert(0, lightValue) # inserts the new value
+        self._lightEntryFront.after(self._readingFrequency, self._update_light_front)    
     
+    def _update_light_back(self):
+        lightValue = "None"
+        lightReading = self._lightBackPin.read()
+        if lightReading:
+            lightValue = f"{self._get_light_from_analog_input(lightReading):.2f}"
+        self._lightEntryBack.delete(0, END) #deletes the current value
+        self._lightEntryBack.insert(0, lightValue) # inserts the new value
+        self._lightEntryBack.after(self._readingFrequency, self._update_light_back) 
         
     def _set_current_time_in_title(self):
         timeNow = datetime.now().strftime("%d.%m.%Y %H:%M:%S")

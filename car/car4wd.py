@@ -94,13 +94,15 @@ def start_gui():
 
     tempPinNum = 0
     noisePinNum = 5
-    lightPinNum = 1
+    lightFrontPinNum = 1
+    lightBackPinNum = 2
     
     tempPin = pinManager.add_analog_pin_input(tempPinNum)
     noisePin = pinManager.add_analog_pin_input(noisePinNum)
-    lightPin = pinManager.add_analog_pin_input(lightPinNum)
+    lightFrontPin = pinManager.add_analog_pin_input(lightFrontPinNum)
+    lightBackPin = pinManager.add_analog_pin_input(lightBackPinNum)
     
-    myGUI = sensorGUI.SensorGUI(master, tempPin, noisePin, lightPin)
+    myGUI = sensorGUI.SensorGUI(master, tempPin, noisePin, lightFrontPin, lightBackPin)
     master.mainloop()
     
 
