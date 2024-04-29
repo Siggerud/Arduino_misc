@@ -6,7 +6,7 @@ from datetime import datetime
 
 class SensorGUI:
     # class for creating a ski weather summary GUI
-    def __init__(self, master, temperaturePin, noisePin, inputVoltage=5, updateReadingFrequency=500):
+    def __init__(self, master, temperaturePin, noisePin, lightPin, inputVoltage=5, updateReadingFrequency=500):
         self._master = master
         self._master.geometry("600x350")
         self._set_current_time_in_title()
@@ -20,6 +20,7 @@ class SensorGUI:
         
         self._tempPin = temperaturePin
         self._noisePin = noisePin
+        self._lightPin = lightPin
         
         temperatureLabel = Label(master, text="Temperature", font=regularFont)
         temperatureLabel.grid(row=0, column=0, sticky="w")
@@ -34,6 +35,13 @@ class SensorGUI:
         self._noiseEntry = Entry(master)
         self._noiseEntry.grid(row=1, column=1)
         self._update_noise()
+        
+        lightLabel = Label(master, text="Light", font=regularFont)
+        lightLabel.grid(row=2, column=0, sticky="w")
+        
+        self._lightEntry = Entry(master)
+        self._lightEntry.grid(row=2, column=1)
+        self._update_light()
         
     def _update_temperature(self):
         tempValue = "None"
@@ -53,6 +61,16 @@ class SensorGUI:
         self._noiseEntry.insert(0, noiseValue) # inserts the new value
         self._noiseEntry.after(self._updateReadingFrequency, self._update_noise)
         
+    def _update_light(self):
+        lightValue = "None"
+        lightReading = self._lightPin.read()
+        if lightReading:
+            lightValue = f"{self._get_light_from_analog_input(lightReading):.2f}"
+        self._lightEntry.delete(0, END) #deletes the current value
+        self._lightEntry.insert(0, lightValue) # inserts the new value
+        self._lightEntry.after(self._updateReadingFrequency, self._update_light)    
+    
+        
     def _set_current_time_in_title(self):
         timeNow = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         self._master.title("Sensor data " + timeNow)
@@ -67,6 +85,11 @@ class SensorGUI:
         return (voltage - 0.5) * 100
         
     def _get_noise_from_analog_input(self, analogValue):
+        voltage = (self._convert_from_analog_input_to_voltage(analogValue))
+        
+        return voltage
+        
+    def _get_light_from_analog_input(self, analogValue):
         voltage = (self._convert_from_analog_input_to_voltage(analogValue))
         
         return voltage

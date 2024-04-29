@@ -28,7 +28,8 @@ pinFloodLightsNum = 3
 pinHeadLightsNum = 8
 pinBrakeLightsNum = 10
 pinHonkNum = 9
-pinObstacleSensorFront = 12
+pinObstacleSensorBackNum = 11
+pinObstacleSensorFrontNum = 12
 
 pinManager = pinManager.PinManager(board)
 
@@ -42,8 +43,9 @@ pinFloodLights = pinManager.add_digital_pin_output(pinFloodLightsNum)
 pinHeadLights = pinManager.add_digital_pin_output(pinHeadLightsNum)
 pinBrakeLights = pinManager.add_digital_pin_output(pinBrakeLightsNum)
 pinHonk = pinManager.add_digital_pin_output(pinHonkNum)
-pinObstacleSensorFront = pinManager.add_digital_pin_input(pinObstacleSensorFront)
-  
+pinObstacleSensorFront = pinManager.add_digital_pin_input(pinObstacleSensorFrontNum)
+pinObstacleSensorBack = pinManager.add_digital_pin_input(pinObstacleSensorBackNum)
+print(pinObstacleSensorBack)
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
     # if delete is pressed, then exit thread
@@ -92,11 +94,13 @@ def start_gui():
 
     tempPinNum = 0
     noisePinNum = 5
+    lightPinNum = 1
     
     tempPin = pinManager.add_analog_pin_input(tempPinNum)
     noisePin = pinManager.add_analog_pin_input(noisePinNum)
+    lightPin = pinManager.add_analog_pin_input(lightPinNum)
     
-    myGUI = sensorGUI.SensorGUI(master, tempPin, noisePin)
+    myGUI = sensorGUI.SensorGUI(master, tempPin, noisePin, lightPin)
     master.mainloop()
     
 
@@ -123,7 +127,9 @@ car.add_reverse_sound(pinHonk)
 # light up headlights
 car.toggle_on_light("l")
 
+# add obstacle sensors
 car.add_obstacle_sensor(pinObstacleSensorFront, "front")
+car.add_obstacle_sensor(pinObstacleSensorBack, "back")
 
 # start main loop
 thread1 = Thread(target = get_keys)

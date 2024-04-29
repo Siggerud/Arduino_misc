@@ -173,27 +173,25 @@ class controllableCar:
     
     def _too_close(self, pin):
         pinValue = pin.read()
-        print(pinValue)
+        
         return not pinValue
-    
-    def _stop_or_move(self, func, pin):
-        if self._too_close(pin):
-            self._stop()
-        else:
-            func()
         
     # drives according to user input, stops if car is too close too obstacle       
     def drive(self, key, action):
         if action == "pressed":
             if key == self._driveCommand:
                 if self._frontObstacleSensorSet:
-                    self._stop_or_move(self._advance, self._frontObstacleSensorPin)
-                else:
+                    if self._too_close(self._frontObstacleSensorPin):
+                        self._stop()
+                        return
+                        
                     self._advance()
             elif key == self._reverseCommand:
                 if self._backObstacleSensorSet:
-                    self._stop_or_move(self._back, self._backObstacleSensorPin)
-                else:
+                    if self._too_close(self._backObstacleSensorPin):
+                        self._stop()
+                        return
+                    
                     self._back()
   
                     if self._brakeLightsSet:
@@ -203,29 +201,31 @@ class controllableCar:
                         self._make_reverse_sound()
                 
             elif key == self._leftCommand:
-                if self._currentKeysPressed[self._leftCommand] == 1:
-                    func = self._turn_left_while_forward
-                elif self._currentKeysPressed[self._rightCommand] == 1:
-                    func = self._turn_left_while_backward
-                else:
-                    func = self._turn_left
-                    
                 if self._leftObstacleSensorSet:
-                    self._stop_or_move(func, self._leftObstacleSensorPin)
+                    if self._too_close(self._leftObstacleSensorPin):
+                        self._stop()
+                        return
+            
+                if self._currentKeysPressed[self._leftCommand] == 1:
+                    self._turn_left_while_forward()
+                elif self._currentKeysPressed[self._rightCommand] == 1:
+                    self._turn_left_while_backward()
                 else:
-                    func()
-            elif key == self._rightCommand:
-                if self._currentKeysPressed[self._driveCommand] == 1:
-                    func = self._turn_right_while_forward
-                elif self._currentKeysPressed[self._reverseCommand] == 1:
-                    func = self._turn_right_while_backward
-                else:
-                    func = self._turn_right
+                    self._turn_left()
                     
+            elif key == self._rightCommand:
                 if self._rightObstacleSensorSet:
-                    self._stop_or_move(func, self._rightObstacleSensorPin)
+                    if self._too_close(self._rightObstacleSensorPin):
+                        self._stop()
+                        return
+                
+                if self._currentKeysPressed[self._driveCommand] == 1:
+                    self._turn_right_while_forward()
+                elif self._currentKeysPressed[self._reverseCommand] == 1:
+                    self._turn_right_while_backward()
                 else:
-                    func()
+                    self._turn_right()
+                    
         elif action == "released":
             self._stop()
             
