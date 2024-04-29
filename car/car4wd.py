@@ -45,7 +45,7 @@ pinBrakeLights = pinManager.add_digital_pin_output(pinBrakeLightsNum)
 pinHonk = pinManager.add_digital_pin_output(pinHonkNum)
 pinObstacleSensorFront = pinManager.add_digital_pin_input(pinObstacleSensorFrontNum)
 pinObstacleSensorBack = pinManager.add_digital_pin_input(pinObstacleSensorBackNum)
-print(pinObstacleSensorBack)
+
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
     # if delete is pressed, then exit thread
@@ -134,15 +134,14 @@ car.add_obstacle_sensor(pinObstacleSensorFront, "front")
 car.add_obstacle_sensor(pinObstacleSensorBack, "back")
 
 # start main loop
-<<<<<<< HEAD
+
 thread1 = Thread(target = get_keys)
 thread1.start()
 
 thread2 = Thread(target = start_gui)
 thread2.start()
-=======
+
 get_keys() 
->>>>>>> 5003c49a5a85a6436af8c6a35baba7f608f3d91e
 
 print("Exiting program")
 
