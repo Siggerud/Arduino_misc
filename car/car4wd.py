@@ -141,7 +141,5 @@ thread1.start()
 thread2 = Thread(target = start_gui)
 thread2.start()
 
-get_keys() 
-
 print("Exiting program")
 
