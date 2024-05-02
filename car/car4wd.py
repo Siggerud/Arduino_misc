@@ -51,8 +51,6 @@ def on_press(key):
     # if delete is pressed, then exit thread
     if key == Key.delete:
         return False
-        
-    
      
     global car
     if type(key) == KeyCode:
@@ -102,7 +100,9 @@ def start_gui():
     lightFrontPin = pinManager.add_analog_pin_input(lightFrontPinNum)
     lightBackPin = pinManager.add_analog_pin_input(lightBackPinNum)
     
-    myGUI = sensorGUI.SensorGUI(master, tempPin, noisePin, lightFrontPin, lightBackPin)
+    pinsInfo = [(tempPin, "Temperature", "Temperature"), (noisePin, "Noise", "Sound"), (lightFrontPin, "Light front", "Light"), (lightBackPin, "Light back", "Light")]
+    
+    myGUI = sensorGUI.SensorGUI(master, pinsInfo)
     master.mainloop()
     
 
