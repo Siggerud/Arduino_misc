@@ -179,6 +179,7 @@ class controllableCar:
     # drives according to user input, stops if car is too close too obstacle       
     def drive(self, key, action):
         if action == "pressed":
+            print("drive")
             if key == self._driveCommand:
                 if self._frontObstacleSensorSet:
                     if self._too_close(self._frontObstacleSensorPin):
