@@ -39,54 +39,82 @@ class controllableCar:
         self._leftObstacleSensorSet = False
         self._rightObstacleSensorSet = False
         
-    def _test_lights(self, pin, text):
-        print(text)
-        for i in range(5):
+    def _print_test_text(self, component):
+        print(f"Testing {component}...\n")
+        
+    def _turn_on_and_off_for_test(self, pin, numOfTimes, sleepTime):
+        for i in range(numOfTimes):
             pin.write(1)
-            sleep(0.1)
+            sleep(sleepTime)
             pin.write(0)
-            sleep(0.1)
+            sleep(sleepTime)
+        
+    def _test_lights(self, pin, component):
+        self._print_test_text(component)
+        self._turn_on_and_off_for_test(pin, 8, 0.15)
             
-    def _test_servo(self, text):
-        print(text)
+    def _test_servo(self):
+        self._print_test_text("servo")
         self._pinServo.write(self._minServoAngle)
         sleep(0.75)
         self._pinServo.write(self._maxServoAngle)
         sleep(0.75)
         self._pinServo.write(self._defaultServoAngle)
+        sleep(0.75)
         
     def _test_honk(self, text):
-        self._honkPin.write(1)
-        sleep(1)
-        self._honkPin.write(0)
+        self._print_test_text("honk")
+        self._turn_on_and_off_for_test(self._honkPin, 5, 0.2)
         
-    def _test_obstacle_sensor(side, text):
-        # fortsett her
-    
+    def _test_obstacle_sensor(self, side):
+        self._print_test_text(f"{side} obstacle sensor")
+        if side == "front":
+            sensor = self._frontObstacleSensorPin
+        elif side == "back":
+            sensor = self._backObstacleSensorPin
+        elif side == "left":
+            sensor = self._leftObstacleSensorPin
+        elif side == "right":
+            sensor = self._rightObstacleSensorPin
+            
+        if not sensor.read():
+            print(f"{side.capitalize()} sensor failed to read values...")
+        else:
+            print(f"{side.capitalize()} sensor reading was succesful!")
+        print("\n")
+              
     def test_car_functions(self):
+        # testing all lights except brake lights
         if self._lightsSet:
             for index, value in enumerate(self._onOffLightCommandsAndPins.values()):
                 pin = value[0]
-                self._test_lights(pin, f"Testing light #{index + 1}")
-                    
-        if self._brakeLightsSet:
-            self._test_lights(self._brakeLightPin, "Testing brake light")
+                self._test_lights(pin, f"light #{index + 1}")
         
+        # testing brake lights
+        if self._brakeLightsSet:
+            self._test_lights(self._brakeLightPin, "brake lights")
+        
+        # testing servo
         if self._servoSet:
-            self._test_servo("Testing servo")
-            
+            self._test_servo()
+        
+        # testing honking
         if self._honkSet:
             self._test_honk("Testing honk")
-            
+        
+        # testing all obstacle sensors
         if self._frontObstacleSensorSet:
             self._test_obstacle_sensor("front")
                 
         if self._backObstacleSensorSet:
-            if not self._backObstacleSensorPin.read():
-                print("No value from back obstacle sensor")
+            self._test_obstacle_sensor("back")
             
-        
-        
+        if self._leftObstacleSensorSet:
+            self._test_obstacle_sensor("left")
+            
+        if self._rightObstacleSensorSet:
+            self._test_obstacle_sensor("right")
+                   
     def add_obstacle_sensor(self, pin, side):
         if side == "front":
             self._frontObstacleSensorPin = pin
