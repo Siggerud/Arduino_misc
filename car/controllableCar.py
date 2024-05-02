@@ -39,6 +39,54 @@ class controllableCar:
         self._leftObstacleSensorSet = False
         self._rightObstacleSensorSet = False
         
+    def _test_lights(self, pin, text):
+        print(text)
+        for i in range(5):
+            pin.write(1)
+            sleep(0.1)
+            pin.write(0)
+            sleep(0.1)
+            
+    def _test_servo(self, text):
+        print(text)
+        self._pinServo.write(self._minServoAngle)
+        sleep(0.75)
+        self._pinServo.write(self._maxServoAngle)
+        sleep(0.75)
+        self._pinServo.write(self._defaultServoAngle)
+        
+    def _test_honk(self, text):
+        self._honkPin.write(1)
+        sleep(1)
+        self._honkPin.write(0)
+        
+    def _test_obstacle_sensor(side, text):
+        # fortsett her
+    
+    def test_car_functions(self):
+        if self._lightsSet:
+            for index, value in enumerate(self._onOffLightCommandsAndPins.values()):
+                pin = value[0]
+                self._test_lights(pin, f"Testing light #{index + 1}")
+                    
+        if self._brakeLightsSet:
+            self._test_lights(self._brakeLightPin, "Testing brake light")
+        
+        if self._servoSet:
+            self._test_servo("Testing servo")
+            
+        if self._honkSet:
+            self._test_honk("Testing honk")
+            
+        if self._frontObstacleSensorSet:
+            self._test_obstacle_sensor("front")
+                
+        if self._backObstacleSensorSet:
+            if not self._backObstacleSensorPin.read():
+                print("No value from back obstacle sensor")
+            
+        
+        
     def add_obstacle_sensor(self, pin, side):
         if side == "front":
             self._frontObstacleSensorPin = pin
@@ -179,7 +227,6 @@ class controllableCar:
     # drives according to user input, stops if car is too close too obstacle       
     def drive(self, key, action):
         if action == "pressed":
-            print("drive")
             if key == self._driveCommand:
                 if self._frontObstacleSensorSet:
                     if self._too_close(self._frontObstacleSensorPin):

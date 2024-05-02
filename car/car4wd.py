@@ -123,15 +123,18 @@ car.add_brake_lights(pinBrakeLights)
 
 # add honking to car
 car.add_honk(pinHonk, "h")
-
 car.add_reverse_sound(pinHonk)
 
-# light up headlights
-car.toggle_on_light("l")
 
 # add obstacle sensors
 car.add_obstacle_sensor(pinObstacleSensorFront, "front")
 car.add_obstacle_sensor(pinObstacleSensorBack, "back")
+
+# test car functions
+car.test_car_functions()
+
+# light up headlights
+car.toggle_on_light("l")
 
 # start main loop
 
