@@ -107,8 +107,8 @@ def start_gui():
     
 
 # explanatory text
-print("You can start steering now")
-print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
+#print("You can start steering now")
+#print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
 
 #initialize car class
 car = controllableCar.controllableCar(pinLeftBack, pinLeftForward, pinRightBack, pinRightForward)
@@ -136,6 +136,8 @@ car.test_car_functions()
 # light up headlights
 car.toggle_on_light("l")
 
+car.print_instructions_for_car()
+
 # start main loop
 
 thread1 = Thread(target = get_keys)
@@ -144,5 +146,4 @@ thread1.start()
 thread2 = Thread(target = start_gui)
 thread2.start()
 
-print("Exiting program")
 

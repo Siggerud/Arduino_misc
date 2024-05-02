@@ -39,6 +39,33 @@ class controllableCar:
         self._leftObstacleSensorSet = False
         self._rightObstacleSensorSet = False
         
+    def print_instructions_for_car(self):
+        print("Keys and commands:")
+        
+        # gather all keys and commands in one dictionary
+        keysAndCommands = {self._driveCommand: "drive forward",
+        self._reverseCommand: "reverse",
+        self._leftCommand: "turn left",
+        self._rightCommand: "turn right"}
+        
+        if self._lightsSet:
+            for command in list(self._onOffLightCommandsAndPins):
+                keysAndCommands[command] = "light"
+        
+        if self._servoSet:
+            keysAndCommands[self._moveServoLeftKey] = "move servo left"
+            keysAndCommands[self._moveServoRightKey] = "move servo right"
+            keysAndCommands[self._moveToDefaultAngleKey] = "move servo to default angle"
+            
+        if self._honkSet:
+            keysAndCommands[self._honkCommandKey] = "honk"
+            
+        for key, command in keysAndCommands.items():
+            print(f"{key}: {command}")
+        print("\n")
+        
+        print("You can start steering now\n")
+            
     def _print_test_text(self, component):
         print(f"Testing {component}...\n")
         
