@@ -46,6 +46,8 @@ pinHonk = pinManager.add_digital_pin_output(pinHonkNum)
 pinObstacleSensorFront = pinManager.add_digital_pin_input(pinObstacleSensorFrontNum)
 pinObstacleSensorBack = pinManager.add_digital_pin_input(pinObstacleSensorBackNum)
 
+controller = True
+
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
     # if delete is pressed, then exit thread
@@ -78,14 +80,28 @@ def on_release(key):
         
     elif type(key) == Key:
         pass
+        
+def listen_to_controller():
+    import pygame
+    global car
+    
+    car.set_joystick()
+    
+    while True:
+        for event in pygame.event.get():
+            car.controller_input(event)
+                    
    
 # procedure for key listening
 def get_keys():
     global stopThreads
-
-    with Listener(on_press=on_press, on_release = on_release) as listener:
-        listener.join() 
-        stopThreads = True
+    
+    if controller == True:
+        listen_to_controller()
+    else:
+        with Listener(on_press=on_press, on_release = on_release) as listener:
+            listener.join() 
+            stopThreads = True
         
 def start_gui():
     master = Tk()
@@ -104,15 +120,11 @@ def start_gui():
     
     myGUI = sensorGUI.SensorGUI(master, pinsInfo)
     master.mainloop()
-    
-
-# explanatory text
-#print("You can start steering now")
-#print("'w' for forward, 's' for backward, 'a' for left, 'd' for right")
+   
 
 #initialize car class
 car = controllableCar.controllableCar(pinLeftBack, pinLeftForward, pinRightBack, pinRightForward)
-
+"""
 # add components to car class
 car.add_servo(pinServo)
 car.add_on_off_lights(pinFloodLights, "f")
@@ -137,13 +149,14 @@ car.test_car_functions()
 car.toggle_on_light("l")
 
 car.print_instructions_for_car()
-
+"""
 # start main loop
-
+"""
 thread1 = Thread(target = get_keys)
 thread1.start()
 
 thread2 = Thread(target = start_gui)
 thread2.start()
-
+"""
+get_keys()
 
