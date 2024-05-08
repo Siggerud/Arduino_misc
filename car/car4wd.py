@@ -46,7 +46,7 @@ pinHonk = pinManager.add_digital_pin_output(pinHonkNum)
 pinObstacleSensorFront = pinManager.add_digital_pin_input(pinObstacleSensorFrontNum)
 pinObstacleSensorBack = pinManager.add_digital_pin_input(pinObstacleSensorBackNum)
 
-controller = True
+controller = False
 
 # procedure for what to do when certain keys are pressed
 def on_press(key):    
@@ -95,13 +95,15 @@ def listen_to_controller():
 # procedure for key listening
 def get_keys():
     global stopThreads
+    global car
     
     if controller == True:
         listen_to_controller()
     else:
-        with Listener(on_press=on_press, on_release = on_release) as listener:
-            listener.join() 
-            stopThreads = True
+        #with Listener(on_press=on_press, on_release = on_release) as listener:
+        #    listener.join() 
+        #    stopThreads = True
+        car.start_listening()
         
 def start_gui():
     master = Tk()
@@ -123,7 +125,7 @@ def start_gui():
    
 
 #initialize car class
-car = controllableCar.controllableCar(pinLeftBack, pinLeftForward, pinRightBack, pinRightForward)
+car = controllableCar.controllableCar("keyboard", pinLeftBack, pinLeftForward, pinRightBack, pinRightForward)
 """
 # add components to car class
 car.add_servo(pinServo)

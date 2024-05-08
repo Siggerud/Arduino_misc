@@ -1,10 +1,11 @@
 from pyfirmata2 import Arduino, util
-from pynput.keyboard import Key
+from pynput.keyboard import Key, Listener, KeyCode
 from time import sleep, time
 import pygame
 
 class controllableCar:
-    def __init__(self, pinLeftReverse, pinLeftForward, pinRightReverse, pinRightForward, driveCommand="w", reverseCommand="s", leftCommand="a", rightCommand="d"):
+    def __init__(self, controlType, pinLeftReverse, pinLeftForward, pinRightReverse, pinRightForward, driveCommand="w", reverseCommand="s", leftCommand="a", rightCommand="d"):
+        self._controlType = controlType
         
         # driving pins
         self._pinLeftReverse = pinLeftReverse
@@ -40,6 +41,41 @@ class controllableCar:
         self._leftObstacleSensorSet = False
         self._rightObstacleSensorSet = False
         
+    def start_listening(self):
+        if self._controlType == "keyboard":
+            with Listener(on_press=self.on_press, on_release=self.on_release) as listener:
+                listener.join() 
+                
+    # procedure for what to do when certain keys are pressed
+    def on_press(self, key):    
+        # if delete is pressed, then exit thread
+        if key == Key.delete:
+            return False
+         
+        if type(key) == KeyCode:
+            buttonPressed = key.char
+            
+            # set which button is currently pressed
+            self.set_current_keys_pressed(buttonPressed, "pressed")
+            
+            self.drive(buttonPressed, "pressed")
+            #self.turn_on_or_off_light(buttonPressed)
+            #self.honk(buttonPressed, "pressed")
+            
+        elif type(key) == Key:
+            self.move_servo(key)
+
+    #procedure for what do when releasing buttons
+    def on_release(self, key):
+        if type(key) == KeyCode:
+            buttonReleased = key.char
+            self.set_current_keys_pressed(buttonReleased, "released")
+            self.drive(key, "released")
+            #self.honk(buttonReleased, "released")
+            
+        elif type(key) == Key:
+            pass 
+        
     def set_joystick(self):
         pygame.joystick.init()
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
@@ -50,7 +86,6 @@ class controllableCar:
         
     def controller_input(self, event):
         if event.type == pygame.JOYHATMOTION:
-            print(event)
             horizontal, vertical = self.myJoystick.get_hat(0)
             if horizontal == 0 and vertical == 1:
                 self._advance()
