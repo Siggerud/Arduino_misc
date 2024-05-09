@@ -41,7 +41,8 @@ class controllableCar:
         self._leftCommand = "a"
         self._rightCommand = "d"
         
-        self._currentKeysPressed = {self._driveCommand: 0, self._reverseCommand: 0, self._leftCommand: 0, self._rightCommand: 0}
+        if self._controllerType == "keyboard":
+            self._currentKeysPressed = {self._driveCommand: 0, self._reverseCommand: 0, self._leftCommand: 0, self._rightCommand: 0}
         
     def start_listening(self):
         if self._controllerType == "keyboard":
@@ -51,27 +52,26 @@ class controllableCar:
         elif self._controllerType == "xbox":
             self._set_joystick()
             
-            print("yes")
             pygame.init()
-            print("yes")
             while True:
                 for event in pygame.event.get():
-                    print("yes")
-                    command = self.convert_xbox_input_to_command(event)
+                    command = self._convert_xbox_input_to_command(event)
                     
                     self.drive(command)
+                    self.move_servo(command)
+                    self.honk(command)
     
     # TODO: check if it works in start_listening    
     def _set_joystick(self):
         pygame.joystick.init()
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
-        self.myJoystick = joysticks[0]
+        self._myJoystick = joysticks[0]
     
-    def convert_xbox_input_to_command(self, event):
+    def _convert_xbox_input_to_command(self, event):
         command = ""
         if event.type == pygame.JOYHATMOTION:
-            horizontal, vertical = self.myJoystick.get_hat(0)
+            horizontal, vertical = self._myJoystick.get_hat(0)
             if horizontal == 0 and vertical == 0:
                 command = "stop"
             elif horizontal == -1 and vertical == 1:
@@ -92,17 +92,32 @@ class controllableCar:
                 command = "drive"
         
         elif event.type == pygame.JOYAXISMOTION:
-            valueLeftRight = self.myJoystick.get_axis(2)
-            if valueLeftRight < 0:
+            treshold = 0.9
+        
+            valueLeftRight = self._myJoystick.get_axis(0)
+            if valueLeftRight < -1 * treshold:
                 command = "moveServoLeft"
-            elif valueLeftRight > 0:
+            elif valueLeftRight > treshold:
                 command = "moveServoRight"
                 
-            valueUpDown = self.myJoystick.get_axis(3)
-            if valueUpDown >= 1:
+            valueUpDown = self._myJoystick.get_axis(1)
+            if valueUpDown >= treshold:
                 command = "moveServoToDefault"
                 
+        elif event.type == pygame.JOYBUTTONDOWN:
+            if self._honkSet:
+                if self._myJoystick.get_button(2):
+                    command = "start honk"
+        
+        elif event.type == pygame.JOYBUTTONUP:
+            if self._honkSet:
+                if self._myJoystick.get_button(2):
+                    command = "stop honk"
+                                   
         return command
+        
+    def _convert_keyboard_input_to_command(self, key, action):
+        
             
             
     # procedure for what to do when certain keys are pressed
@@ -292,15 +307,14 @@ class controllableCar:
         self._honkCommandKey = commandKey
         self._honkSet = True
         
-    def honk(self, key, action):
+    def honk(self, command):
         if self._honkSet == False:
             raise ComponentNotSetError
             
-        if key == self._honkCommandKey:
-            if action == "released":
-                self._honkPin.write(0)
-            elif action == "pressed":
-                self._honkPin.write(1)
+        if command == "start honk":
+            self._honkPin.write(0)
+        elif command == "stop honk":
+            self._honkPin.write(1)
                 
     def add_reverse_sound(self, pin):
         self._reverseSoundPin = pin
@@ -343,27 +357,27 @@ class controllableCar:
         # set initial angle
         self._pinServo.write(self._currentServoAngle)
         
-    def move_servo(self, key):
+    def move_servo(self, command):
         if self._servoSet == False:
             raise ComponentNotSetError
     
-        if key == self._moveServoLeftKey or key == self._moveServoRightKey or key == self._moveToDefaultAngleKey:
+        if command == "moveServoLeft" or command == "moveServoRight" or command == "moveServoToDefault":
             moveServo = False   
-            if key == self._moveServoLeftKey:
+            if command == "moveServoLeft":
                 if self._currentServoAngle >= self._minServoAngle + self._servoIncrement:
                     angle = self._currentServoAngle - self._servoIncrement
                     moveServo = True
                 elif self._currentServoAngle > self._minServoAngle:
                     angle = self._currentServoAngle - 1
                     moveServo = True              
-            elif key == self._moveServoRightKey:
+            elif command == "moveServoRight":
                 if self._currentServoAngle <= self._maxServoAngle - self._servoIncrement:
                     angle = self._currentServoAngle + self._servoIncrement
                     moveServo = True
                 elif self._currentServoAngle < self._maxServoAngle:
                     angle = self._currentServoAngle + 1
                     moveServo = True
-            elif key == self._moveToDefaultAngleKey:
+            elif command == "moveServoToDefault":
                 angle = self._defaultServoAngle
                 moveServo = True
                     
@@ -429,7 +443,7 @@ class controllableCar:
                     self._stop()
                     return
                     
-                self._turn_right()
+            self._turn_right()
             
         elif command == "right forward":
             if self._rightObstacleSensorSet:
