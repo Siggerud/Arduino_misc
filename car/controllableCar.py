@@ -30,9 +30,10 @@ class controllableCar:
         self._leftObstacleSensorSet = False
         self._rightObstacleSensorSet = False
         
+        #commands
         self._drivingCommands = ["drive", "reverse", "left", "right", "left forward", "left reverse", "right forward", "right reverse", "stop"]
-        self._moveServoCommands = ["move servo left", "move servo right", "move servo to default angle"]
-        self._honkCommand = ["honk"]     
+        self._moveServoCommands = ["move servo left", "move servo right", "move servo to default"]   
+        self._honkCommands = ["start honk", "stop honk"]
          
         self._numOfLights = 0
         
@@ -49,14 +50,14 @@ class controllableCar:
             self._moveServoLeftKey, self._moveServoRightKey, self._moveToDefaultAngleKey = self._moveServoKeys
             
             self._honkKey = "h"
-            self._honkCommands = ["start honk", "stop honk"]
+            
             self._lightKeys = ["j", "k", "l"]
         
         self._turnOnLightCommands = []
         self._turnOffLightCommands = []
         for i in range(3):
-            self._turnOnLightCommands.append(f"Turn on light {i}")
-            self._turnOffLightCommands.append(f"Turn off light {i}")
+            self._turnOnLightCommands.append(f"turn on light {i}")
+            self._turnOffLightCommands.append(f"turn off light {i}")
             
         
     def enable_driving(self, pinLeftReverse, pinLeftForward, pinRightReverse, pinRightForward):
@@ -94,13 +95,13 @@ class controllableCar:
                 
         if self._servoSet:
             if command in self._moveServoCommands:
-                self._moveServo(command)
+                self._move_servo(command)
                 
         if self._lightsSet:
             if command in self._turnOnLightCommands:
-                self._turn_on_light(command)
+                self._toggle_on_light(command)
             elif command in self._turnOffLightCommands:
-                self._turn_on_light(command)
+                self._toggle_off_light(command)
     
     # TODO: check if it works in start_listening    
     def _set_joystick(self):
@@ -155,7 +156,7 @@ class controllableCar:
                 command = "start honk"
             elif self.myJoystick.get_button(3):
                 command = "turn on light 2"
-                
+            
         elif eventType == pygame.JOYBUTTONUP:
             if self.myJoystick.get_button(0):
                 command = "turn off light 0"
@@ -165,10 +166,12 @@ class controllableCar:
                 command = "stop honk"
             elif self.myJoystick.get_button(3):
                 command = "turn off light 2"
-                
+        print(event)  
         return command
         
     def _convert_keyboard_input_to_command(self, key, action):
+        command = ""
+    
         if type(key) == KeyCode:
             button = key.char
             
@@ -203,11 +206,11 @@ class controllableCar:
             elif button in self._lightKeys:
                 if action == "pressed":
                     index = self._lightKeys.index(button)
-
-                    if self._onOffLightCommandsAndPins[index][1] == False:
-                        command = f"turn on light {index}"
-                    elif self._onOffLightCommandsAndPins[index][1]:
-                        command = f"turn off light {index}"
+                    if index < self._numOfLights:
+                        if self._onOffLightCommandsAndPins[index][1] == False:
+                            command = f"turn on light {index}"
+                        elif self._onOffLightCommandsAndPins[index][1]:
+                            command = f"turn off light {index}"
                     
         elif type(key) == Key:
             if key in self._moveServoKeys:
@@ -217,7 +220,7 @@ class controllableCar:
                     command = "move servo right"
                 elif key == self._moveToDefaultAngleKey:
                     command = "move servo to default"
-        print(command)
+        print(command)            
         return command
  
             
@@ -285,8 +288,7 @@ class controllableCar:
         
         for userInput, command in userInputAndCommands.items():
             print(f"{userInput}: {command}")
-            print("\n")        
-                  
+        print("\n")        
         print("You can start steering now\n")
             
     def _print_test_text(self, component):
@@ -448,34 +450,23 @@ class controllableCar:
         # set initial angle
         self._pinServo.write(self._currentServoAngle)
         
-    def move_servo(self, key):
-        if self._servoSet == False:
-            raise ComponentNotSetError
-    
-        if key == self._moveServoLeftKey or key == self._moveServoRightKey or key == self._moveToDefaultAngleKey:
-            moveServo = False   
-            if key == self._moveServoLeftKey:
-                if self._currentServoAngle >= self._minServoAngle + self._servoIncrement:
-                    angle = self._currentServoAngle - self._servoIncrement
-                    moveServo = True
-                elif self._currentServoAngle > self._minServoAngle:
-                    angle = self._currentServoAngle - 1
-                    moveServo = True              
-            elif key == self._moveServoRightKey:
-                if self._currentServoAngle <= self._maxServoAngle - self._servoIncrement:
-                    angle = self._currentServoAngle + self._servoIncrement
-                    moveServo = True
-                elif self._currentServoAngle < self._maxServoAngle:
-                    angle = self._currentServoAngle + 1
-                    moveServo = True
-            elif key == self._moveToDefaultAngleKey:
-                angle = self._defaultServoAngle
-                moveServo = True
+    def _move_servo(self, command):   
+        if command == "move servo left":
+            if self._currentServoAngle >= self._minServoAngle + self._servoIncrement:
+                angle = self._currentServoAngle - self._servoIncrement
+            elif self._currentServoAngle > self._minServoAngle:
+                angle = self._currentServoAngle - 1             
+        elif command == "move servo right":
+            if self._currentServoAngle <= self._maxServoAngle - self._servoIncrement:
+                angle = self._currentServoAngle + self._servoIncrement
+            elif self._currentServoAngle < self._maxServoAngle:
+                angle = self._currentServoAngle + 1
+        elif command == "move servo to default":
+            angle = self._defaultServoAngle
                     
-            if moveServo:
-                self._pinServo.write(angle)
-                self._currentServoAngle = angle
-                sleep(0.005)
+        self._pinServo.write(angle)
+        self._currentServoAngle = angle
+        sleep(0.005)
     
     def _too_close(self, pin):
         pinValue = pin.read()
