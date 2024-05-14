@@ -72,19 +72,19 @@ def start_gui():
     
 
 #initialize car class
-car = controllableCar.controllableCar("xbox")
+car = controllableCar.controllableCar("keyboard")
 car.enable_driving(pinLeftBack, pinLeftForward, pinRightBack, pinRightForward)
 
 # add components to car class
 car.add_servo(pinServo)
-car.add_on_off_lights(pinFloodLights, "f")
-car.add_on_off_lights(pinHeadLights, "l")
+car.add_on_off_lights(pinFloodLights)
+car.add_on_off_lights(pinHeadLights)
 
 # add brake lights to car
 car.add_brake_lights(pinBrakeLights)
 
 # add honking to car
-car.add_honk(pinHonk, "h")
+car.add_honk(pinHonk)
 car.add_reverse_sound(pinHonk)
 
 
@@ -94,9 +94,6 @@ car.add_obstacle_sensor(pinObstacleSensorBack, "back")
 
 # test car functions
 #car.test_car_functions()
-
-# light up headlights
-car.toggle_on_light("l")
 
 car.print_instructions_for_car()
 

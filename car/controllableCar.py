@@ -9,6 +9,7 @@ class controllableCar:
         self._controllerType = controllerType
         
         self._onOffLightCommandsAndPins = {}
+        self._drivingEnabled = False
         self._servoSet = False
         self._lightsSet = False
         self._honkSet = False
@@ -29,6 +30,35 @@ class controllableCar:
         self._leftObstacleSensorSet = False
         self._rightObstacleSensorSet = False
         
+        self._drivingCommands = ["drive", "reverse", "left", "right", "left forward", "left reverse", "right forward", "right reverse", "stop"]
+        self._moveServoCommands = ["move servo left", "move servo right", "move servo to default angle"]
+        self._honkCommand = ["honk"]     
+         
+        self._numOfLights = 0
+        
+        if controllerType == "keyboard":
+            
+            self._advanceKey = "w"
+            self._reverseKey = "s"
+            self._leftKey = "a"
+            self._rightKey = "d"
+            
+            self._currentKeysPressed = {self._advanceKey: 0, self._reverseKey: 0, self._leftKey: 0, self._rightKey: 0}
+            
+            self._moveServoKeys = [Key.left, Key.right, Key.up]
+            self._moveServoLeftKey, self._moveServoRightKey, self._moveToDefaultAngleKey = self._moveServoKeys
+            
+            self._honkKey = "h"
+            self._honkCommands = ["start honk", "stop honk"]
+            self._lightKeys = ["j", "k", "l"]
+        
+        self._turnOnLightCommands = []
+        self._turnOffLightCommands = []
+        for i in range(3):
+            self._turnOnLightCommands.append(f"Turn on light {i}")
+            self._turnOffLightCommands.append(f"Turn off light {i}")
+            
+        
     def enable_driving(self, pinLeftReverse, pinLeftForward, pinRightReverse, pinRightForward):
         # driving pins
         self._pinLeftReverse = pinLeftReverse
@@ -36,17 +66,11 @@ class controllableCar:
         self._pinRightReverse = pinRightReverse
         self._pinRightForward = pinRightForward
         
-        self._driveCommand = "w"
-        self._reverseCommand = "s"
-        self._leftCommand = "a"
-        self._rightCommand = "d"
-        
-        if self._controllerType == "keyboard":
-            self._currentKeysPressed = {self._driveCommand: 0, self._reverseCommand: 0, self._leftCommand: 0, self._rightCommand: 0}
+        self._drivingEnabled = True    
         
     def start_listening(self):
         if self._controllerType == "keyboard":
-            with Listener(on_press=self.on_press, on_release = self.on_release) as listener:
+            with Listener(on_press=self._on_press, on_release = self._on_release) as listener:
                 listener.join() 
                 
         elif self._controllerType == "xbox":
@@ -57,31 +81,50 @@ class controllableCar:
                 for event in pygame.event.get():
                     command = self._convert_xbox_input_to_command(event)
                     
-                    self.drive(command)
-                    self.move_servo(command)
-                    self.honk(command)
+                    self._execute_car_command(command)
+                            
+    def _execute_car_command(self, command):
+        if self._drivingEnabled:
+            if command in self._drivingCommands:
+                self._drive(command)
+                
+        if self._honkSet:
+            if command in self._honkCommands:
+                self._honk(command)
+                
+        if self._servoSet:
+            if command in self._moveServoCommands:
+                self._moveServo(command)
+                
+        if self._lightsSet:
+            if command in self._turnOnLightCommands:
+                self._turn_on_light(command)
+            elif command in self._turnOffLightCommands:
+                self._turn_on_light(command)
     
     # TODO: check if it works in start_listening    
     def _set_joystick(self):
         pygame.joystick.init()
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
-        self._myJoystick = joysticks[0]
+        self.myJoystick = joysticks[0]
     
     def _convert_xbox_input_to_command(self, event):
         command = ""
-        if event.type == pygame.JOYHATMOTION:
-            horizontal, vertical = self._myJoystick.get_hat(0)
+        
+        eventType = event.type
+        if eventType == pygame.JOYHATMOTION:
+            horizontal, vertical = self.myJoystick.get_hat(0)
             if horizontal == 0 and vertical == 0:
                 command = "stop"
             elif horizontal == -1 and vertical == 1:
                 command = "left forward"
             elif horizontal == -1 and vertical == -1:
-                command = "left backward"
+                command = "left reverse"
             elif horizontal == 1 and vertical == 1:
                 command = "right forward"
             elif horizontal == 1 and vertical == -1:
-                command = "right backward"
+                command = "right reverse"
             elif horizontal == -1:
                 command = "left"
             elif horizontal == 1:
@@ -91,92 +134,159 @@ class controllableCar:
             elif vertical == 1:
                 command = "drive"
         
-        elif event.type == pygame.JOYAXISMOTION:
+        elif eventType == pygame.JOYAXISMOTION:
             treshold = 0.9
-        
-            valueLeftRight = self._myJoystick.get_axis(0)
+            valueLeftRight = self.myJoystick.get_axis(2)
             if valueLeftRight < -1 * treshold:
                 command = "moveServoLeft"
             elif valueLeftRight > treshold:
                 command = "moveServoRight"
                 
-            valueUpDown = self._myJoystick.get_axis(1)
+            valueUpDown = self.myJoystick.get_axis(3)
             if valueUpDown >= treshold:
                 command = "moveServoToDefault"
                 
-        elif event.type == pygame.JOYBUTTONDOWN:
-            if self._honkSet:
-                if self._myJoystick.get_button(2):
-                    command = "start honk"
-        
-        elif event.type == pygame.JOYBUTTONUP:
-            if self._honkSet:
-                if self._myJoystick.get_button(2):
-                    command = "stop honk"
-                                   
+        elif eventType == pygame.JOYBUTTONDOWN:
+            if self.myJoystick.get_button(0):
+                command = "turn on light 0"
+            elif self.myJoystick.get_button(1):
+                command = "turn on light 1"
+            elif self.myJoystick.get_button(2):
+                command = "start honk"
+            elif self.myJoystick.get_button(3):
+                command = "turn on light 2"
+                
+        elif eventType == pygame.JOYBUTTONUP:
+            if self.myJoystick.get_button(0):
+                command = "turn off light 0"
+            elif self.myJoystick.get_button(1):
+                command = "turn off light 1"
+            elif self.myJoystick.get_button(2):
+                command = "stop honk"
+            elif self.myJoystick.get_button(3):
+                command = "turn off light 2"
+                
         return command
         
     def _convert_keyboard_input_to_command(self, key, action):
-        
+        if type(key) == KeyCode:
+            button = key.char
             
+            if button in list(self._currentKeysPressed.keys()):
+                self._set_current_keys_pressed(button, action)
+                
+                if self._currentKeysPressed[self._advanceKey] == 1 and self._currentKeysPressed[self._leftKey] == 1:
+                    command = "left forward"
+                elif self._currentKeysPressed[self._reverseKey] == 1 and self._currentKeysPressed[self._leftKey] == 1:
+                    command = "left reverse"
+                elif self._currentKeysPressed[self._advanceKey] == 1 and self._currentKeysPressed[self._rightKey] == 1:
+                    command = "right forward"
+                elif self._currentKeysPressed[self._reverseKey] == 1 and self._currentKeysPressed[self._rightKey] == 1:
+                    command = "right reverse"       
+                elif self._currentKeysPressed[self._advanceKey] == 1:
+                    command = "drive"
+                elif self._currentKeysPressed[self._reverseKey] == 1:
+                    command = "reverse"
+                elif self._currentKeysPressed[self._leftKey] == 1:
+                    command = "left"
+                elif self._currentKeysPressed[self._rightKey] == 1:
+                    command = "right"
+                elif 1 not in list(self._currentKeysPressed.values()):
+                    command = "stop"
+                    
+            elif button == self._honkKey:
+                if action == "pressed":
+                    command = "start honk"
+                elif action == "released":
+                    command = "stop honk"
+                    
+            elif button in self._lightKeys:
+                if action == "pressed":
+                    index = self._lightKeys.index(button)
+
+                    if self._onOffLightCommandsAndPins[index][1] == False:
+                        command = f"turn on light {index}"
+                    elif self._onOffLightCommandsAndPins[index][1]:
+                        command = f"turn off light {index}"
+                    
+        elif type(key) == Key:
+            if key in self._moveServoKeys:
+                if key == self._moveServoLeftKey:
+                    command = "move servo left"
+                elif key == self._moveServoRightKey:
+                    command = "move servo right"
+                elif key == self._moveToDefaultAngleKey:
+                    command = "move servo to default"
+        print(command)
+        return command
+ 
             
     # procedure for what to do when certain keys are pressed
-    def on_press(self, key):    
+    def _on_press(self, key):    
         # if delete is pressed, then exit thread
         if key == Key.delete:
             return False
-         
-        if type(key) == KeyCode:
-            buttonPressed = key.char
             
-            # set which button is currently pressed
-            self.set_current_keys_pressed(buttonPressed, "pressed")
-            
-            self.drive(buttonPressed, "pressed")
-            self.turn_on_or_off_light(buttonPressed)
-            self.honk(buttonPressed, "pressed")
-            
-        elif type(key) == Key:
-            self.move_servo(key)
+        command = self._convert_keyboard_input_to_command(key, "pressed")
+        
+        self._execute_car_command(command)
 
     #procedure for what do when releasing buttons
-    def on_release(self, key):
-        if type(key) == KeyCode:
-            buttonReleased = key.char
-            self.set_current_keys_pressed(buttonReleased, "released")
-            self.drive(key, "released")
-            self.honk(buttonReleased, "released")
-            
-        elif type(key) == Key:
-            pass
-            
+    def _on_release(self, key):
+        command = self._convert_keyboard_input_to_command(key, "released")
         
+        self._execute_car_command(command)    
         
     def print_instructions_for_car(self):
-        print("Keys and commands:")
-        
-        # gather all keys and commands in one dictionary
-        keysAndCommands = {self._driveCommand: "drive forward",
-        self._reverseCommand: "reverse",
-        self._leftCommand: "turn left",
-        self._rightCommand: "turn right"}
-        
-        if self._lightsSet:
-            for command in list(self._onOffLightCommandsAndPins):
-                keysAndCommands[command] = "light"
-        
-        if self._servoSet:
-            keysAndCommands[self._moveServoLeftKey] = "move servo left"
-            keysAndCommands[self._moveServoRightKey] = "move servo right"
-            keysAndCommands[self._moveToDefaultAngleKey] = "move servo to default angle"
+        if self._controllerType == "keyboard":
+            print("Keys and commands:")
             
-        if self._honkSet:
-            keysAndCommands[self._honkCommandKey] = "honk"
+            # gather all keys and commands in one dictionary
+            userInputAndCommands = {self._advanceKey: "drive forward",
+            self._reverseKey: "reverse",
+            self._leftKey: "turn left",
+            self._rightKey: "turn right"}
             
-        for key, command in keysAndCommands.items():
-            print(f"{key}: {command}")
-        print("\n")
+            if self._lightsSet:
+                for command in list(self._onOffLightCommandsAndPins):
+                    userInputAndCommands[command] = "light"
+            
+            if self._servoSet:
+                userInputAndCommands[self._moveServoLeftKey] = "move servo left"
+                userInputAndCommands[self._moveServoRightKey] = "move servo right"
+                userInputAndCommands[self._moveToDefaultAngleKey] = "move servo to default angle"
+                
+            if self._honkSet:
+                userInputAndCommands[self._honkKey] = "honk"
+                
+            
+        elif self._controllerType == "xbox":
+            print("Buttons and commands")
+            
+            userInputAndCommands = {"Pad up": "drive forward",
+            "Pad down": "reverse",
+            "Pad left": "turn left",
+            "Pad right": "turn right",
+            }
+            
+            if self._lightsSet:
+                userInputAndCommands["A"] = "light"
+                userInputAndCommands["B"] = "light"
+                userInputAndCommands["Y"] = "light"
+            
+            if self._servoSet:
+                userInputAndCommands["Left stick left"] = "move servo left"
+                userInputAndCommands["Left stick right"] = "move servo right"
+                userInputAndCommands["Left stick up"] = "move servo to default angle"
+                
+            if self._honkSet:
+                userInputAndCommands["X"] = "honk"
+            
         
+        for userInput, command in userInputAndCommands.items():
+            print(f"{userInput}: {command}")
+            print("\n")        
+                  
         print("You can start steering now\n")
             
     def _print_test_text(self, component):
@@ -275,46 +385,30 @@ class controllableCar:
         self._brakeLightPin = pin
         self._brakeLightsSet = True
         
-    def add_on_off_lights(self, pin, commandKey):
-        self._onOffLightCommandsAndPins[commandKey] = [pin, False] # set pin attached to command and an initial value of False on light
+    def add_on_off_lights(self, pin):
+        self._onOffLightCommandsAndPins[self._numOfLights] = [pin, False] # set pin attached to command and an initial value of False on light
         self._lightsSet = True
+        self._numOfLights += 1
         
-    def toggle_on_light(self, commandKey):
-        if self._lightsSet == False:
-            raise ComponentNotSetError
-    
-        if commandKey in self._onOffLightCommandsAndPins.keys():
-            self._onOffLightCommandsAndPins[commandKey][0].write(1)
-            self._onOffLightCommandsAndPins[commandKey][1] = True
+    def _toggle_on_light(self, command):
+        index = int(command[-1])
+        self._onOffLightCommandsAndPins[index][0].write(1)
+        self._onOffLightCommandsAndPins[index][1] = True
             
-    def toggle_off_light(self, commandKey):
-        if self._lightsSet == False:
-            raise ComponentNotSetError
-            
-        if commandKey in self._onOffLightCommandsAndPins.keys():
-            self._onOffLightCommandsAndPins[commandKey][0].write(0)
-            self._onOffLightCommandsAndPins[commandKey][1] = False          
-        
-    def turn_on_or_off_light(self, commandKey):
-        if commandKey in self._onOffLightCommandsAndPins.keys():
-            if self._onOffLightCommandsAndPins[commandKey][1] == False:
-                self.toggle_on_light(commandKey)
-            else:
-                self.toggle_off_light(commandKey)
+    def _toggle_off_light(self, command):
+        index = int(command[-1])
+        self._onOffLightCommandsAndPins[index][0].write(0)
+        self._onOffLightCommandsAndPins[index][1] = False                 
                 
-    def add_honk(self, pin, commandKey):
+    def add_honk(self, pin):
         self._honkPin = pin
-        self._honkCommandKey = commandKey
         self._honkSet = True
         
-    def honk(self, command):
-        if self._honkSet == False:
-            raise ComponentNotSetError
-            
+    def _honk(self, command):
         if command == "start honk":
-            self._honkPin.write(0)
-        elif command == "stop honk":
             self._honkPin.write(1)
+        elif command == "stop honk":
+            self._honkPin.write(0)
                 
     def add_reverse_sound(self, pin):
         self._reverseSoundPin = pin
@@ -342,11 +436,8 @@ class controllableCar:
         self._reverseSoundPin.write(0)
         self._reverseSoundOn = False
         
-    def add_servo(self, pinServo, moveLeftKey=Key.left, moveRightKey=Key.right, moveToDefaultAngleKey=Key.up, increment=5, defaultServoAngle=90, minAngle=0, maxAngle=179):
+    def add_servo(self, pinServo, increment=5, defaultServoAngle=90, minAngle=0, maxAngle=179):
         self._pinServo = pinServo
-        self._moveServoLeftKey = moveLeftKey
-        self._moveServoRightKey = moveRightKey
-        self._moveToDefaultAngleKey = moveToDefaultAngleKey
         self._servoIncrement = increment
         self._minServoAngle = minAngle
         self._maxServoAngle = maxAngle
@@ -357,27 +448,27 @@ class controllableCar:
         # set initial angle
         self._pinServo.write(self._currentServoAngle)
         
-    def move_servo(self, command):
+    def move_servo(self, key):
         if self._servoSet == False:
             raise ComponentNotSetError
     
-        if command == "moveServoLeft" or command == "moveServoRight" or command == "moveServoToDefault":
+        if key == self._moveServoLeftKey or key == self._moveServoRightKey or key == self._moveToDefaultAngleKey:
             moveServo = False   
-            if command == "moveServoLeft":
+            if key == self._moveServoLeftKey:
                 if self._currentServoAngle >= self._minServoAngle + self._servoIncrement:
                     angle = self._currentServoAngle - self._servoIncrement
                     moveServo = True
                 elif self._currentServoAngle > self._minServoAngle:
                     angle = self._currentServoAngle - 1
                     moveServo = True              
-            elif command == "moveServoRight":
+            elif key == self._moveServoRightKey:
                 if self._currentServoAngle <= self._maxServoAngle - self._servoIncrement:
                     angle = self._currentServoAngle + self._servoIncrement
                     moveServo = True
                 elif self._currentServoAngle < self._maxServoAngle:
                     angle = self._currentServoAngle + 1
                     moveServo = True
-            elif command == "moveServoToDefault":
+            elif key == self._moveToDefaultAngleKey:
                 angle = self._defaultServoAngle
                 moveServo = True
                     
@@ -392,7 +483,7 @@ class controllableCar:
         return not pinValue
         
     # drives according to user input, stops if car is too close too obstacle       
-    def drive(self, command):
+    def _drive(self, command):
         if command == "drive":
             if self._frontObstacleSensorSet:
                 if self._too_close(self._frontObstacleSensorPin):
@@ -512,19 +603,17 @@ class controllableCar:
         self._pinRightForward.write(directionSpeeds[1])
         
     # keeps track of which keys are pressed
-    def set_current_keys_pressed(self, key, action):
-        if key in self._currentKeysPressed.keys():
-            if action == "released":
-                value = 0
-            elif action == "pressed":
-                value = 1
-            self._currentKeysPressed[key] = value
+    def _set_current_keys_pressed(self, key, action):
+        if action == "released":
+            value = 0
+        elif action == "pressed":
+            value = 1
+        self._currentKeysPressed[key] = value
+            
+#TODO 
+#finn en måte å skru på enkeltlys i en interface
+#sett en mulighet for å endre kommando keys etter test av bil
+#finn en måte å avslutte programmet etter test av bil
+
+
         
-        
-        
-        
-class ComponentNotSetError(Exception):
-    pass
-    
-class SideNotFoundError(Exception):
-    pass
