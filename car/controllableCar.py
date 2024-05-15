@@ -322,12 +322,13 @@ class controllableCar:
             
     def _test_servo(self):
         self._print_test_text("servo")
+        servoSleepTime = 0.75
         self._pinServo.write(self._minServoAngle)
-        sleep(0.75)
+        sleep(servoSleepTime)
         self._pinServo.write(self._maxServoAngle)
-        sleep(0.75)
+        sleep(servoSleepTime)
         self._pinServo.write(self._defaultServoAngle)
-        sleep(0.75)
+        sleep(servoSleepTime)
         
     def _test_honk(self, text):
         self._print_test_text("honk")
@@ -622,6 +623,8 @@ class controllableCar:
         elif action == "pressed":
             value = 1
         self._currentKeysPressed[key] = value
+        
+# TODO: finn ut hvorfor sensorene ikke fungerer like bra på xbox controller
             
 
 
