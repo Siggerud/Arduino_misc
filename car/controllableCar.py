@@ -52,6 +52,11 @@ class controllableCar:
             self._honkKey = "h"
             
             self._lightKeys = ["j", "k", "l"]
+            
+            self._exitKey = Key.delete
+            
+        elif controllerType == "xbox":
+            self._lightButtons = [0, 1, 3]
         
         self._turnOnLightCommands = []
         self._turnOffLightCommands = []
@@ -81,6 +86,8 @@ class controllableCar:
             while True:
                 for event in pygame.event.get():
                     command = self._convert_xbox_input_to_command(event)
+                    if command == "exit program":
+                        return
                     
                     self._execute_car_command(command)
                             
@@ -108,14 +115,14 @@ class controllableCar:
         pygame.joystick.init()
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
-        self.myJoystick = joysticks[0]
+        self._myJoystick = joysticks[0]
     
     def _convert_xbox_input_to_command(self, event):
         command = ""
         
         eventType = event.type
         if eventType == pygame.JOYHATMOTION:
-            horizontal, vertical = self.myJoystick.get_hat(0)
+            horizontal, vertical = self._myJoystick.get_hat(0)
             if horizontal == 0 and vertical == 0:
                 command = "stop"
             elif horizontal == -1 and vertical == 1:
@@ -137,36 +144,40 @@ class controllableCar:
         
         elif eventType == pygame.JOYAXISMOTION:
             treshold = 0.9
-            valueLeftRight = self.myJoystick.get_axis(2)
+            valueLeftRight = self._myJoystick.get_axis(2)
             if valueLeftRight < -1 * treshold:
-                command = "moveServoLeft"
+                command = "move servo left"
             elif valueLeftRight > treshold:
-                command = "moveServoRight"
+                command = "move servo right"
                 
-            valueUpDown = self.myJoystick.get_axis(3)
+            valueUpDown = self._myJoystick.get_axis(3)
             if valueUpDown >= treshold:
-                command = "moveServoToDefault"
+                command = "move servo to default"
                 
         elif eventType == pygame.JOYBUTTONDOWN:
-            if self.myJoystick.get_button(0):
-                command = "turn on light 0"
-            elif self.myJoystick.get_button(1):
-                command = "turn on light 1"
-            elif self.myJoystick.get_button(2):
+            buttonPressed = event.button
+            if buttonPressed == 2:
                 command = "start honk"
-            elif self.myJoystick.get_button(3):
-                command = "turn on light 2"
+            elif buttonPressed == 5:
+                command = "exit program"
+            elif buttonPressed in list(self._onOffLightCommandsAndPins.keys()):
+                if buttonPressed == 0:
+                    index = 0
+                elif buttonPressed == 1:
+                    index = 1
+                elif buttonPressed == 3:
+                    index = 2
+                
+                if self._onOffLightCommandsAndPins[index][1] == False:
+                    command = f"turn on light {index}"
+                elif self._onOffLightCommandsAndPins[index][1]:
+                    command = f"turn off light {index}"
             
         elif eventType == pygame.JOYBUTTONUP:
-            if self.myJoystick.get_button(0):
-                command = "turn off light 0"
-            elif self.myJoystick.get_button(1):
-                command = "turn off light 1"
-            elif self.myJoystick.get_button(2):
+            buttonReleased = event.button
+            if buttonReleased == 2:
                 command = "stop honk"
-            elif self.myJoystick.get_button(3):
-                command = "turn off light 2"
-        print(event)  
+        
         return command
         
     def _convert_keyboard_input_to_command(self, key, action):
@@ -206,7 +217,7 @@ class controllableCar:
             elif button in self._lightKeys:
                 if action == "pressed":
                     index = self._lightKeys.index(button)
-                    if index < self._numOfLights:
+                    if index in list(self._onOffLightCommandsAndPins.keys()):
                         if self._onOffLightCommandsAndPins[index][1] == False:
                             command = f"turn on light {index}"
                         elif self._onOffLightCommandsAndPins[index][1]:
@@ -220,17 +231,17 @@ class controllableCar:
                     command = "move servo right"
                 elif key == self._moveToDefaultAngleKey:
                     command = "move servo to default"
-        print(command)            
+            elif key == self._exitKey:
+                command = "exit program"
+                   
         return command
  
             
     # procedure for what to do when certain keys are pressed
-    def _on_press(self, key):    
-        # if delete is pressed, then exit thread
-        if key == Key.delete:
-            return False
-            
+    def _on_press(self, key):              
         command = self._convert_keyboard_input_to_command(key, "pressed")
+        if command == "exit program":
+            return False
         
         self._execute_car_command(command)
 
@@ -262,6 +273,8 @@ class controllableCar:
             if self._honkSet:
                 userInputAndCommands[self._honkKey] = "honk"
                 
+            userInputAndCommands[self._exitKey] = "exit program"
+                
             
         elif self._controllerType == "xbox":
             print("Buttons and commands")
@@ -284,6 +297,8 @@ class controllableCar:
                 
             if self._honkSet:
                 userInputAndCommands["X"] = "honk"
+                
+            userInputAndCommands["RB"] = "exit program"
             
         
         for userInput, command in userInputAndCommands.items():
@@ -451,22 +466,29 @@ class controllableCar:
         self._pinServo.write(self._currentServoAngle)
         
     def _move_servo(self, command):   
+        moveServo = False
         if command == "move servo left":
             if self._currentServoAngle >= self._minServoAngle + self._servoIncrement:
                 angle = self._currentServoAngle - self._servoIncrement
+                moveServo = True
             elif self._currentServoAngle > self._minServoAngle:
-                angle = self._currentServoAngle - 1             
+                angle = self._currentServoAngle - 1
+                moveServo = True
         elif command == "move servo right":
             if self._currentServoAngle <= self._maxServoAngle - self._servoIncrement:
                 angle = self._currentServoAngle + self._servoIncrement
+                moveServo = True
             elif self._currentServoAngle < self._maxServoAngle:
                 angle = self._currentServoAngle + 1
+                moveServo = True
         elif command == "move servo to default":
             angle = self._defaultServoAngle
-                    
-        self._pinServo.write(angle)
-        self._currentServoAngle = angle
-        sleep(0.005)
+            moveServo = True
+             
+        if moveServo:     
+            self._pinServo.write(angle)
+            self._currentServoAngle = angle
+            sleep(0.005)
     
     def _too_close(self, pin):
         pinValue = pin.read()
@@ -481,20 +503,20 @@ class controllableCar:
                     self._stop()
                     return
                     
-                self._advance()
+            self._advance()
         elif command == "reverse":
             if self._backObstacleSensorSet:
                 if self._too_close(self._backObstacleSensorPin):
                     self._stop()
                     return
                 
-                self._back()
+            self._back()
 
-                if self._brakeLightsSet:
-                    self._brakeLightPin.write(1)
-                    
-                if self._reverseSoundSet:
-                    self._make_reverse_sound()
+            if self._brakeLightsSet:
+                self._brakeLightPin.write(1)
+                
+            if self._reverseSoundSet:
+                self._make_reverse_sound()
             
         elif command == "left":
             if self._leftObstacleSensorSet:
@@ -601,10 +623,7 @@ class controllableCar:
             value = 1
         self._currentKeysPressed[key] = value
             
-#TODO 
-#finn en måte å skru på enkeltlys i en interface
-#sett en mulighet for å endre kommando keys etter test av bil
-#finn en måte å avslutte programmet etter test av bil
+
 
 
         
