@@ -493,7 +493,7 @@ class controllableCar:
     
     def _too_close(self, pin):
         pinValue = pin.read()
-        
+        print(not pinValue)
         return not pinValue
         
     # drives according to user input, stops if car is too close too obstacle       

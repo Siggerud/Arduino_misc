@@ -72,7 +72,7 @@ def start_gui():
     
 
 #initialize car class
-car = controllableCar.controllableCar("xbox")
+car = controllableCar.controllableCar("keyboard")
 car.enable_driving(pinLeftBack, pinLeftForward, pinRightBack, pinRightForward)
 
 # add components to car class
