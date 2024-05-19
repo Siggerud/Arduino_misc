@@ -18,16 +18,16 @@ sleep(1)
 stopThreads = False
 
 # define pins
-pinRBNum = 7
+pinRBNum = 10
 pinRFNum = 6
 pinLBNum = 5
-pinLFNum = 4
+pinLFNum = 9
 
 pinServoNum = 2
 pinFloodLightsNum = 3
 pinHeadLightsNum = 8
-pinBrakeLightsNum = 10
-pinHonkNum = 9
+pinBrakeLightsNum = 7
+pinHonkNum = 4
 pinObstacleSensorBackNum = 11
 pinObstacleSensorFrontNum = 12
 
